@@ -3,6 +3,7 @@ import ProcedureGrid from "../components/procedures/ProcedureGrid";
 import ProcedureSearch from "../components/procedures/ProcedureSearch";
 import ProcedureFilters from "../components/procedures/ProcedureFilters";
 import { getProcedures } from "../services/procedures";
+import PriceEstimator from "../components/estimator/PriceEstimator";
 
 type Procedure = {
   id: string;
@@ -22,6 +23,7 @@ function Home() {
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [selectedProcedure, setSelectedProcedure] = useState<Procedure | null>(null);
 
   useEffect(() => {
     async function loadProcedures() {
@@ -163,6 +165,13 @@ function Home() {
 
         {!loading && !error && (
           <>
+           <div className="mb-8">
+              <PriceEstimator
+                procedure={selectedProcedure}
+                onClear={() => setSelectedProcedure(null)}
+              />
+          </div>
+          
             <p className="mb-4 text-sm text-slate-500">
               Showing {filteredProcedures.length}{" "}
               {filteredProcedures.length === 1
@@ -172,6 +181,7 @@ function Home() {
 
             <ProcedureGrid
               procedures={filteredProcedures}
+              onSelect={setSelectedProcedure}
             />
           </>
         )}
