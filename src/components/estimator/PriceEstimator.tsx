@@ -1,21 +1,21 @@
 import { useEffect, useMemo, useState } from "react";
 import { getAddOnsForProcedure, type AddOn } from "../../services/addons";
-
-type Procedure = {
-  id: string;
-  name: string;
-  base_price: number;
-  estimated_duration_mins: number;
-};
+import type { Procedure } from "../../types/procedure";
 
 type PriceEstimatorProps = {
   procedure: Procedure | null;
   onClear: () => void;
+  onRequestConsultation: (
+    procedure: Procedure,
+    selectedAddOns: AddOn[],
+    totalPrice: number
+  ) => void;
 };
 
 function PriceEstimator({
   procedure,
   onClear,
+  onRequestConsultation,
 }: PriceEstimatorProps) {
   const [addOns, setAddOns] = useState<AddOn[]>([]);
   const [selectedAddOnIds, setSelectedAddOnIds] = useState<string[]>([]);
@@ -24,8 +24,6 @@ function PriceEstimator({
 
 useEffect(() => {
     if (!procedure) {
-        setAddOns([]);
-        setSelectedAddOnIds([]);
         return;
     }
 
@@ -225,6 +223,13 @@ useEffect(() => {
 
       <button
         type="button"
+        onClick={() =>
+          onRequestConsultation(
+            procedure,
+            selectedAddOns,
+            totalPrice
+          )
+        }
         className="mt-5 w-full rounded-xl bg-slate-900 px-4 py-3 font-semibold text-white hover:bg-slate-700"
       >
         Request consultation

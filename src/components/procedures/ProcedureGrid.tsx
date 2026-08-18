@@ -1,14 +1,5 @@
 import ProcedureCard from "./ProcedureCard";
-
-type Procedure = {
-  id: string;
-  name: string;
-  category: string;
-  description: string;
-  base_price: number;
-  estimated_duration_mins: number;
-  image_url: string | null;
-};
+import type { Procedure } from "../../types/procedure";
 
 type ProcedureGridProps = {
   procedures: Procedure[];
