@@ -1,5 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import ProcedureGrid from "../components/procedures/ProcedureGrid";
+import ProcedureSearch from "../components/procedures/ProcedureSearch";
+import ProcedureFilters from "../components/procedures/ProcedureFilters";
 import { getProcedures } from "../services/procedures";
 
 type Procedure = {
@@ -14,6 +16,10 @@ type Procedure = {
 
 function Home() {
   const [procedures, setProcedures] = useState<Procedure[]>([]);
+  const [search, setSearch] = useState("");
+  const [category, setCategory] = useState("all");
+  const [sort, setSort] = useState("name");
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -33,6 +39,54 @@ function Home() {
     loadProcedures();
   }, []);
 
+  const categories = useMemo(() => {
+    return [...new Set(procedures.map((procedure) => procedure.category))]
+      .sort();
+  }, [procedures]);
+
+  const filteredProcedures = useMemo(() => {
+    const normalizedSearch = search.trim().toLowerCase();
+
+    const result = procedures.filter((procedure) => {
+      const matchesSearch =
+        normalizedSearch === "" ||
+        procedure.name.toLowerCase().includes(normalizedSearch) ||
+        procedure.category.toLowerCase().includes(normalizedSearch);
+
+      const matchesCategory =
+        category === "all" ||
+        procedure.category === category;
+
+      return matchesSearch && matchesCategory;
+    });
+
+    return [...result].sort((a, b) => {
+      switch (sort) {
+        case "price-asc":
+          return a.base_price - b.base_price;
+
+        case "price-desc":
+          return b.base_price - a.base_price;
+
+        case "duration-asc":
+          return (
+            a.estimated_duration_mins -
+            b.estimated_duration_mins
+          );
+
+        case "duration-desc":
+          return (
+            b.estimated_duration_mins -
+            a.estimated_duration_mins
+          );
+
+        case "name":
+        default:
+          return a.name.localeCompare(b.name);
+      }
+    });
+  }, [procedures, search, category, sort]);
+
   return (
     <>
       <section className="bg-slate-900">
@@ -47,8 +101,8 @@ function Home() {
             </h1>
 
             <p className="mt-6 text-lg leading-8 text-slate-300">
-              Explore available treatments, compare prices, and request a
-              consultation with our clinic.
+              Explore available treatments, compare prices, and request
+              a consultation with our clinic.
             </p>
 
             <a
@@ -75,6 +129,23 @@ function Home() {
           </p>
         </div>
 
+        {!loading && !error && (
+          <div className="mb-8 space-y-4">
+            <ProcedureSearch
+              value={search}
+              onChange={setSearch}
+            />
+
+            <ProcedureFilters
+              category={category}
+              sort={sort}
+              categories={categories}
+              onCategoryChange={setCategory}
+              onSortChange={setSort}
+            />
+          </div>
+        )}
+
         {loading && (
           <p className="py-12 text-center text-slate-500">
             Loading treatments...
@@ -91,7 +162,18 @@ function Home() {
         )}
 
         {!loading && !error && (
-          <ProcedureGrid procedures={procedures} />
+          <>
+            <p className="mb-4 text-sm text-slate-500">
+              Showing {filteredProcedures.length}{" "}
+              {filteredProcedures.length === 1
+                ? "treatment"
+                : "treatments"}
+            </p>
+
+            <ProcedureGrid
+              procedures={filteredProcedures}
+            />
+          </>
         )}
       </main>
     </>
