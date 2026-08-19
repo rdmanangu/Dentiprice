@@ -29,68 +29,78 @@ function InquiryForm({
 
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState(false);
 
-async function handleSubmit(
-  event: React.FormEvent<HTMLFormElement>
-) {
-  event.preventDefault();
+  async function handleSubmit(
+    event: React.FormEvent<HTMLFormElement>
+  ) {
+    event.preventDefault();
 
-  setError(null);
+    if (submitting) {
+      return;
+    }
 
-  if (!patientName.trim()) {
-    setError("Please enter your name.");
-    return;
+    setError(null);
+    setSuccess(false);
+
+    if (!patientName.trim()) {
+      setError("Please enter your name.");
+      return;
+    }
+
+    if (!phone.trim()) {
+      setError("Please enter your phone number.");
+      return;
+    }
+
+    if (!email.trim()) {
+      setError("Please enter your email.");
+      return;
+    }
+
+    if (!preferredDate) {
+      setError("Please select a preferred date.");
+      return;
+    }
+
+    if (!preferredTimeSlot) {
+      setError("Please select a preferred time.");
+      return;
+    }
+
+    try {
+      setSubmitting(true);
+
+      await createInquiry({
+        patientName,
+        phone,
+        email,
+        procedureId: procedure.id,
+        procedureName: procedure.name,
+        procedurePrice: procedure.base_price,
+        selectedAddOns,
+        totalPrice,
+        preferredDate,
+        preferredTimeSlot,
+      });
+
+      setSuccess(true);
+
+      setPatientName("");
+      setPhone("");
+      setEmail("");
+      setPreferredDate("");
+      setPreferredTimeSlot("");
+    } catch (error) {
+      console.error("INQUIRY SUBMISSION ERROR:", error);
+
+      setError(
+        "Unable to submit your consultation request. Please try again."
+      );
+    } finally {
+      setSubmitting(false);
+    }
   }
-
-  if (!phone.trim()) {
-    setError("Please enter your phone number.");
-    return;
-  }
-
-  if (!email.trim()) {
-    setError("Please enter your email.");
-    return;
-  }
-
-  if (!preferredDate) {
-    setError("Please select a preferred date.");
-    return;
-  }
-
-  if (!preferredTimeSlot) {
-    setError("Please select a preferred time.");
-    return;
-  }
-
-  try {
-    setSubmitting(true);
-
-    await createInquiry({
-      patientName,
-      phone,
-      email,
-      procedureId: procedure.id,
-      procedureName: procedure.name,
-      procedurePrice: procedure.base_price,
-      selectedAddOns,
-      totalPrice,
-      preferredDate,
-      preferredTimeSlot,
-    });
-
-    alert("Your consultation request has been submitted.");
-
-    onCancel();
-  } catch (error) {
-  console.error("FULL SUPABASE ERROR:", error);
-
-  if (error && typeof error === "object") {
-    console.table(error);
-  }
-
-  setError("Unable to submit your consultation request.");
-}
-}
 
   return (
     <form
@@ -266,12 +276,31 @@ async function handleSubmit(
         </p>
       )}
 
+      {success && (
+        <div
+          role="status"
+          className="mt-5 rounded-xl border border-green-200 bg-green-50 p-4 text-green-700"
+        >
+          <p className="font-semibold">
+            Consultation request submitted successfully.
+          </p>
+
+          <p className="mt-1 text-sm">
+            Our clinic will contact you to confirm your appointment.
+          </p>
+        </div>
+      )}
+
       <button
         type="submit"
-        disabled={submitting}
+        disabled={submitting || success}
         className="mt-6 w-full rounded-xl bg-slate-900 px-4 py-3 font-semibold text-white hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-50"
       >
-        {submitting ? "Submitting..." : "Submit request"}
+        {submitting
+          ? "Submitting..."
+          : success
+            ? "Request submitted"
+            : "Submit request"}
       </button>
     </form>
   );
