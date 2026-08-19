@@ -1,5 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabase";
+import ProcedureManager from "../components/admin/ProcedureManager";
 
 function AdminDashboard() {
   const navigate = useNavigate();
@@ -39,6 +40,7 @@ function AdminDashboard() {
         </h2>
 
         <div className="mt-6 grid gap-6 sm:grid-cols-2">
+            <ProcedureManager />
           <div className="rounded-2xl bg-white p-6 shadow-sm">
             <h3 className="font-semibold text-slate-900">
               Procedures
