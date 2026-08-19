@@ -10,14 +10,14 @@ type AddOn = {
 
 type InquiryFormProps = {
   procedure: Procedure;
-  selectedAddOns: AddOn[];
+  selectedAddOns?: AddOn[];    // made optional so we can default to []
   totalPrice: number;
   onCancel: () => void;
 };
 
 function InquiryForm({
   procedure,
-  selectedAddOns,
+  selectedAddOns = [],          // default empty array
   totalPrice,
   onCancel,
 }: InquiryFormProps) {
@@ -94,9 +94,24 @@ function InquiryForm({
     } catch (error) {
       console.error("INQUIRY SUBMISSION ERROR:", error);
 
-      setError(
-        "Unable to submit your consultation request. Please try again."
-      );
+      // --- Improved error messaging starts here ---
+      let userMessage = "Unable to submit your consultation request. Please try again.";
+
+      if (error instanceof Error) {
+        const msg = error.message.toLowerCase();
+
+        if (msg.includes("permission denied") || msg.includes("403")) {
+          userMessage = "Permission denied. Please check your connection or try again later.";
+        } else if (msg.includes("network") || msg.includes("fetch")) {
+          userMessage = "Network error. Please check your internet connection.";
+        } else {
+          // Use the actual error message if it's not too technical
+          userMessage = error.message;
+        }
+      }
+      // --- end of improved messaging ---
+
+      setError(userMessage);
     } finally {
       setSubmitting(false);
     }

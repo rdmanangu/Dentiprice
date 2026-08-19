@@ -1,25 +1,8 @@
 import { supabase } from "../lib/supabase";
+import type { Inquiry, InquiryStatus, CreateInquiryInput } from "../types/inquiry";
 
-type CreateInquiryInput = {
-  patientName: string;
-  phone: string;
-  email: string;
-  procedureId: string;
-  procedureName: string;
-  procedurePrice: number;
-  selectedAddOns: {
-    id: string;
-    name: string;
-    price: number;
-  }[];
-  totalPrice: number;
-  preferredDate: string;
-  preferredTimeSlot: string;
-};
-
-export async function createInquiry(
-  input: CreateInquiryInput
-) {
+// ─── CREATE (atomic via RPC) ──────────────────────────
+export async function createInquiry(input: CreateInquiryInput) {
   const {
     patientName,
     phone,
@@ -33,38 +16,15 @@ export async function createInquiry(
     preferredTimeSlot,
   } = input;
 
-  // 1. Create the inquiry
-  const { data: inquiry, error: inquiryError } = await supabase
-    .from("inquiries")
-    .insert({
-      patient_name: patientName.trim(),
-      phone: phone.trim(),
-      email: email.trim().toLowerCase(),
-      calculated_total_price: totalPrice,
-      preferred_date: preferredDate,
-      preferred_time_slot: preferredTimeSlot,
-      status: "pending",
-    })
-    .select()
-    .single();
-
-  if (inquiryError) {
-    throw inquiryError;
-  }
-
-  // 2. Create the main procedure item
+  // Build the items array for the RPC
   const items = [
     {
-      inquiry_id: inquiry.id,
       procedure_id: procedureId,
       add_on_id: null,
       item_name: procedureName,
       item_price: procedurePrice,
     },
-
-    // 3. Add selected add-ons
     ...selectedAddOns.map((addOn) => ({
-      inquiry_id: inquiry.id,
       procedure_id: null,
       add_on_id: addOn.id,
       item_name: addOn.name,
@@ -72,13 +32,85 @@ export async function createInquiry(
     })),
   ];
 
-  const { error: itemsError } = await supabase
-    .from("inquiry_items")
-    .insert(items);
+  // Call the database function
+  const { data, error } = await supabase.rpc('create_inquiry_with_items', {
+    p_patient_name: patientName.trim(),
+    p_phone: phone.trim(),
+    p_email: email.trim().toLowerCase(),
+    p_calculated_total_price: totalPrice,
+    p_preferred_date: preferredDate,
+    p_preferred_time_slot: preferredTimeSlot,
+    p_items: items, // send as JSONB
+  });
 
-  if (itemsError) {
-    throw itemsError;
+  if (error) {
+    console.error('RPC create_inquiry_with_items error:', error);
+    throw error;
   }
 
-  return inquiry;
+  return data as { id: string; status: string; patient_name: string };
+}
+
+// ─── READ all inquiries ────────────────────────────────
+export async function getInquiries(): Promise<Inquiry[]> {
+  const { data, error } = await supabase
+    .from('inquiries')
+    .select('*')
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    console.error('Get inquiries error:', error);
+    throw error;
+  }
+
+  return data ?? [];
+}
+
+// ─── UPDATE status ──────────────────────────────────────
+export async function updateInquiryStatus(id: string, status: InquiryStatus): Promise<Inquiry> {
+  const { data, error } = await supabase
+    .from('inquiries')
+    .update({ status })
+    .eq('id', id)
+    .select()
+    .single();
+
+  if (error) {
+    console.error('Update inquiry status error:', error);
+    throw error;
+  }
+
+  return data;
+}
+
+// ─── DELETE (requires authentication) ──────────────────
+export async function deleteInquiry(id: string): Promise<void> {
+  const {
+    data: { session },
+    error: sessionError,
+  } = await supabase.auth.getSession();
+
+  if (sessionError) {
+    throw sessionError;
+  }
+
+  if (!session) {
+    throw new Error('You must be signed in to delete an inquiry.');
+  }
+
+  const { data, error } = await supabase
+    .from('inquiries')
+    .delete()
+    .eq('id', id)
+    .select('id')
+    .maybeSingle();
+
+  if (error) {
+    console.error('Delete inquiry error:', error);
+    throw error;
+  }
+
+  if (!data) {
+    throw new Error('The inquiry was not deleted. Your account may not have permission.');
+  }
 }

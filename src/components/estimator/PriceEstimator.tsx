@@ -28,6 +28,7 @@ useEffect(() => {
     }
 
     const procedureId = procedure.id;
+    let cancelled = false;
 
     async function loadAddOns() {
         try {
@@ -37,16 +38,25 @@ useEffect(() => {
 
         const data = await getAddOnsForProcedure(procedureId);
 
-        setAddOns(data);
+        if (!cancelled) {
+          setAddOns(data);
+        }
         } catch (error) {
         console.error(error);
-        setAddOnError("Unable to load add-ons.");
+        if (!cancelled) {
+          setAddOnError("Unable to load add-ons.");
+        }
         } finally {
-        setLoadingAddOns(false);
+        if (!cancelled) {
+          setLoadingAddOns(false);
+        }
         }
     }
 
-    loadAddOns();
+    void loadAddOns();
+    return () => {
+      cancelled = true;
+    };
     }, [procedure]);
 
   const selectedAddOns = useMemo(() => {
