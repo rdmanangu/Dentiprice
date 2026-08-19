@@ -16,7 +16,7 @@ function AdminRoute({ children }: AdminRouteProps) {
         data: { session },
       } = await supabase.auth.getSession();
 
-      setAuthenticated(!!session);
+      setAuthenticated(session?.user.app_metadata.role === "admin");
       setLoading(false);
     }
 

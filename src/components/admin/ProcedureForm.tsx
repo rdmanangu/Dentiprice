@@ -1,22 +1,39 @@
 import { useState } from "react";
 import type { Procedure } from "../../types/procedure";
-import { createProcedure } from "../../services/procedures";
+import {
+  createProcedure,
+  updateProcedure,
+} from "../../services/procedures";
 
 type ProcedureFormProps = {
-  onCreated: (procedure: Procedure) => void;
+  procedure?: Procedure;
+  onSaved: (procedure: Procedure) => void;
   onCancel: () => void;
 };
 
 function ProcedureForm({
-  onCreated,
+  procedure,
+  onSaved,
   onCancel,
 }: ProcedureFormProps) {
-  const [name, setName] = useState("");
-  const [category, setCategory] = useState("");
-  const [description, setDescription] = useState("");
-  const [basePrice, setBasePrice] = useState("");
-  const [duration, setDuration] = useState("");
-  const [imageUrl, setImageUrl] = useState("");
+  const [name, setName] = useState(procedure?.name ?? "");
+  const [category, setCategory] = useState(
+    procedure?.category ?? ""
+  );
+  const [description, setDescription] = useState(
+    procedure?.description ?? ""
+  );
+  const [basePrice, setBasePrice] = useState(
+    procedure ? String(procedure.base_price) : ""
+  );
+  const [duration, setDuration] = useState(
+    procedure
+      ? String(procedure.estimated_duration_mins)
+      : ""
+  );
+  const [imageUrl, setImageUrl] = useState(
+    procedure?.image_url ?? ""
+  );
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -62,19 +79,39 @@ function ProcedureForm({
     try {
       setLoading(true);
 
-      const procedure = await createProcedure({
-        name: name.trim(),
-        category: category.trim(),
-        description: description.trim(),
-        base_price: price,
-        estimated_duration_mins: durationMins,
-        image_url: imageUrl.trim() || null,
-      });
+      let savedProcedure: Procedure;
 
-      onCreated(procedure);
+      if (procedure) {
+        savedProcedure = await updateProcedure(
+          procedure.id,
+          {
+            name: name.trim(),
+            category: category.trim(),
+            description: description.trim(),
+            base_price: price,
+            estimated_duration_mins: durationMins,
+            image_url: imageUrl.trim() || null,
+          }
+        );
+      } else {
+        savedProcedure = await createProcedure({
+          name: name.trim(),
+          category: category.trim(),
+          description: description.trim(),
+          base_price: price,
+          estimated_duration_mins: durationMins,
+          image_url: imageUrl.trim() || null,
+        });
+      }
+
+      onSaved(savedProcedure);
     } catch (err) {
       console.error(err);
-      setError("Unable to create procedure.");
+      setError(
+        procedure
+          ? "Unable to update procedure."
+          : "Unable to create procedure."
+      );
     } finally {
       setLoading(false);
     }
@@ -84,11 +121,13 @@ function ProcedureForm({
     <div className="rounded-2xl bg-white p-6 shadow-sm">
       <div className="mb-6">
         <h3 className="text-xl font-bold text-slate-900">
-          Add procedure
+          {procedure ? "Edit procedure" : "Add procedure"}
         </h3>
 
         <p className="mt-1 text-sm text-slate-500">
-          Add a new treatment to the Dentiprice menu.
+          {procedure
+            ? "Update this treatment."
+            : "Add a new treatment to the Dentiprice menu."}
         </p>
       </div>
 
@@ -242,14 +281,18 @@ function ProcedureForm({
             disabled={loading}
             className="rounded-xl bg-slate-900 px-5 py-3 font-semibold text-white hover:bg-slate-700 disabled:opacity-50"
           >
-            {loading ? "Creating..." : "Create procedure"}
+            {loading
+              ? "Saving..."
+              : procedure
+                ? "Save changes"
+                : "Create procedure"}
           </button>
 
           <button
             type="button"
             onClick={onCancel}
             disabled={loading}
-            className="rounded-xl border border-slate-300 px-5 py-3 font-semibold text-slate-700 hover:bg-slate-50"
+            className="rounded-xl border border-slate-300 px-5 py-3 font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50"
           >
             Cancel
           </button>

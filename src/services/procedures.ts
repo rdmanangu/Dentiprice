@@ -51,12 +51,33 @@ export async function updateProcedure(
 export async function deleteProcedure(
   id: string
 ): Promise<void> {
-  const { error } = await supabase
+  const {
+    data: { session },
+    error: sessionError,
+  } = await supabase.auth.getSession();
+
+  if (sessionError) {
+    throw sessionError;
+  }
+
+  if (!session) {
+    throw new Error("You must be signed in to delete a procedure.");
+  }
+
+  const { data, error } = await supabase
     .from("procedures")
     .delete()
-    .eq("id", id);
+    .eq("id", id)
+    .select("id")
+    .maybeSingle();
 
   if (error) {
     throw error;
+  }
+
+  if (!data) {
+    throw new Error(
+      "The procedure was not deleted. Your account may not have permission."
+    );
   }
 }
