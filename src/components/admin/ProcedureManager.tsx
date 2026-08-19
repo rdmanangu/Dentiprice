@@ -5,10 +5,13 @@ import {
   getProcedures,
 } from "../../services/procedures";
 
+import ProcedureForm from "./ProcedureForm";
+
 function ProcedureManager() {
   const [procedures, setProcedures] = useState<Procedure[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showForm, setShowForm] = useState(false);
 
   async function loadProcedures() {
     try {
@@ -71,8 +74,26 @@ function ProcedureManager() {
           </p>
         </div>
 
+        {showForm && (
+        <div className="mt-6">
+            <ProcedureForm
+            onCreated={(procedure) => {
+                setProcedures((current) =>
+                [...current, procedure].sort((a, b) =>
+                    a.name.localeCompare(b.name)
+                )
+                );
+
+                setShowForm(false);
+            }}
+            onCancel={() => setShowForm(false)}
+            />
+        </div>
+        )}
+        
         <button
           type="button"
+          onClick={() => setShowForm(true)}
           className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-700"
         >
           Add procedure
