@@ -11,7 +11,7 @@ export interface Inquiry {
   status: InquiryStatus;
   created_at: string;
   updated_at: string;
-  // optionally include items if you want to fetch them together
+  selected_procedure_ids: string[];
 }
 
 // Type for the input expected by the RPC function
@@ -31,3 +31,4 @@ export type CreateInquiryInput = {
   preferredDate: string;
   preferredTimeSlot: string;
 };
+

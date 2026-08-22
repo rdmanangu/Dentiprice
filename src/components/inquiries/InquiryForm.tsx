@@ -10,14 +10,14 @@ type AddOn = {
 
 type InquiryFormProps = {
   procedure: Procedure;
-  selectedAddOns?: AddOn[];    // made optional so we can default to []
+  selectedAddOns?: AddOn[];
   totalPrice: number;
   onCancel: () => void;
 };
 
 function InquiryForm({
   procedure,
-  selectedAddOns = [],          // default empty array
+  selectedAddOns = [],
   totalPrice,
   onCancel,
 }: InquiryFormProps) {
@@ -71,18 +71,18 @@ function InquiryForm({
     try {
       setSubmitting(true);
 
-      await createInquiry({
-        patientName,
-        phone,
-        email,
-        procedureId: procedure.id,
-        procedureName: procedure.name,
-        procedurePrice: procedure.base_price,
-        selectedAddOns,
-        totalPrice,
-        preferredDate,
-        preferredTimeSlot,
-      });
+    await createInquiry({
+      patientName: patientName.trim(),
+      phone: phone.trim(),
+      email: email.trim(),
+      procedureId: procedure.id,
+      procedureName: procedure.name,
+      procedurePrice: procedure.base_price,
+      selectedAddOns,
+      totalPrice,
+      preferredDate,
+      preferredTimeSlot,
+    });
 
       setSuccess(true);
 
@@ -94,22 +94,28 @@ function InquiryForm({
     } catch (error) {
       console.error("INQUIRY SUBMISSION ERROR:", error);
 
-      // --- Improved error messaging starts here ---
-      let userMessage = "Unable to submit your consultation request. Please try again.";
+      let userMessage =
+        "Unable to submit your consultation request. Please try again.";
 
       if (error instanceof Error) {
         const msg = error.message.toLowerCase();
 
-        if (msg.includes("permission denied") || msg.includes("403")) {
-          userMessage = "Permission denied. Please check your connection or try again later.";
-        } else if (msg.includes("network") || msg.includes("fetch")) {
-          userMessage = "Network error. Please check your internet connection.";
+        if (
+          msg.includes("permission denied") ||
+          msg.includes("403")
+        ) {
+          userMessage =
+            "Permission denied. Please try again later.";
+        } else if (
+          msg.includes("network") ||
+          msg.includes("fetch")
+        ) {
+          userMessage =
+            "Network error. Please check your internet connection.";
         } else {
-          // Use the actual error message if it's not too technical
           userMessage = error.message;
         }
       }
-      // --- end of improved messaging ---
 
       setError(userMessage);
     } finally {
@@ -160,7 +166,8 @@ function InquiryForm({
             <ul className="mt-1 text-sm text-slate-700">
               {selectedAddOns.map((addOn) => (
                 <li key={addOn.id}>
-                  {addOn.name} — ₱{Number(addOn.price).toLocaleString()}
+                  {addOn.name} — ₱
+                  {Number(addOn.price).toLocaleString()}
                 </li>
               ))}
             </ul>
@@ -174,7 +181,7 @@ function InquiryForm({
             </span>
 
             <span className="font-bold text-slate-900">
-              ₱{totalPrice.toLocaleString()}
+              ₱{Number(totalPrice).toLocaleString()}
             </span>
           </div>
         </div>
@@ -193,7 +200,9 @@ function InquiryForm({
             id="patient-name"
             type="text"
             value={patientName}
-            onChange={(event) => setPatientName(event.target.value)}
+            onChange={(event) =>
+              setPatientName(event.target.value)
+            }
             required
             className="mt-2 w-full rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-slate-900"
           />
@@ -211,7 +220,9 @@ function InquiryForm({
             id="phone"
             type="tel"
             value={phone}
-            onChange={(event) => setPhone(event.target.value)}
+            onChange={(event) =>
+              setPhone(event.target.value)
+            }
             required
             className="mt-2 w-full rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-slate-900"
           />
@@ -229,7 +240,9 @@ function InquiryForm({
             id="email"
             type="email"
             value={email}
-            onChange={(event) => setEmail(event.target.value)}
+            onChange={(event) =>
+              setEmail(event.target.value)
+            }
             required
             className="mt-2 w-full rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-slate-900"
           />
@@ -273,10 +286,18 @@ function InquiryForm({
               required
               className="mt-2 w-full rounded-xl border border-slate-300 bg-white px-4 py-3 outline-none focus:border-slate-900"
             >
-              <option value="">Select a time</option>
-              <option value="morning">Morning</option>
-              <option value="afternoon">Afternoon</option>
-              <option value="evening">Evening</option>
+              <option value="">
+                Select a time
+              </option>
+              <option value="morning">
+                Morning
+              </option>
+              <option value="afternoon">
+                Afternoon
+              </option>
+              <option value="evening">
+                Evening
+              </option>
             </select>
           </div>
         </div>
@@ -301,7 +322,8 @@ function InquiryForm({
           </p>
 
           <p className="mt-1 text-sm">
-            Our clinic will contact you to confirm your appointment.
+            Our clinic will contact you to confirm your
+            appointment.
           </p>
         </div>
       )}

@@ -81,3 +81,23 @@ export async function deleteProcedure(
     );
   }
 }
+
+export async function getProceduresByIds(
+  ids?: string[]
+): Promise<Procedure[]> {
+  if (!ids || ids.length === 0) {
+    return [];
+  }
+
+  const { data, error } = await supabase
+    .from("procedures")
+    .select("*")
+    .in("id", ids);
+
+  if (error) {
+    console.error("Get procedures by IDs error:", error);
+    throw error;
+  }
+
+  return data ?? [];
+}

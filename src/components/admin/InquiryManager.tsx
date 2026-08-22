@@ -8,11 +8,13 @@ import {
   getInquiries,
   updateInquiryStatus,
 } from "../../services/inquiries";
+import InquiryDetails from "./InquiryDetails";
 
 function InquiryManager() {
   const [inquiries, setInquiries] = useState<Inquiry[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [selectedInquiry, setSelectedInquiry] = useState<Inquiry | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -236,24 +238,37 @@ function InquiryManager() {
                         </option>
                       </select>
                     </td>
+                      <td className="px-6 py-4">
+                        <div className="flex gap-3">
+                          <button
+                            type="button"
+                            onClick={() => setSelectedInquiry(inquiry)}
+                            className="text-sm font-medium text-slate-900 hover:underline"
+                          >
+                            View
+                          </button>
 
-                    <td className="px-6 py-4">
-                      <button
-                        type="button"
-                        onClick={() =>
-                          handleDelete(inquiry.id)
-                        }
-                        className="text-sm font-medium text-red-600 hover:text-red-800"
-                      >
-                        Delete
-                      </button>
-                    </td>
+                          <button
+                            type="button"
+                            onClick={() => handleDelete(inquiry.id)}
+                            className="text-sm font-medium text-red-600 hover:text-red-800"
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      </td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
         </div>
+      )}
+      {selectedInquiry && (
+        <InquiryDetails
+          inquiry={selectedInquiry}
+          onClose={() => setSelectedInquiry(null)}
+        />
       )}
     </section>
   );

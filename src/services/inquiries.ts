@@ -114,3 +114,28 @@ export async function deleteInquiry(id: string): Promise<void> {
     throw new Error('The inquiry was not deleted. Your account may not have permission.');
   }
 }
+
+export type InquiryItem = {
+  id: string;
+  inquiry_id: string;
+  procedure_id: string | null;
+  add_on_id: string | null;
+  item_name: string;
+  item_price: number;
+};
+
+export async function getInquiryItems(
+  inquiryId: string
+): Promise<InquiryItem[]> {
+  const { data, error } = await supabase
+    .from("inquiry_items")
+    .select("*")
+    .eq("inquiry_id", inquiryId);
+
+  if (error) {
+    console.error("Get inquiry items error:", error);
+    throw error;
+  }
+
+  return data ?? [];
+}
