@@ -5,6 +5,7 @@ import ProcedureFilters from "../components/procedures/ProcedureFilters";
 import { getProcedures } from "../services/procedures";
 import PriceEstimator from "../components/estimator/PriceEstimator";
 import InquiryForm from "../components/inquiries/InquiryForm";
+import { useDialogBehavior } from "../lib/useDialogBehavior";
 import type { Procedure } from "../types/procedure";
 
 
@@ -13,6 +14,54 @@ type AddOn = {
   name: string;
   price: number;
 };
+
+type InquiryModalProps = {
+  procedure: Procedure;
+  addOns: AddOn[];
+  totalPrice: number;
+  onCancel: () => void;
+};
+
+function InquiryModal({
+  procedure,
+  addOns,
+  totalPrice,
+  onCancel,
+}: InquiryModalProps) {
+  const dialogRef = useDialogBehavior(onCancel);
+
+  function handleBackdropClick(
+    event: React.MouseEvent<HTMLDivElement>
+  ) {
+    if (event.target === event.currentTarget) {
+      onCancel();
+    }
+  }
+
+  return (
+    <div
+      className="fixed inset-0 z-50 overflow-y-auto bg-black/50 p-4"
+      onClick={handleBackdropClick}
+    >
+      <div
+        ref={dialogRef}
+        tabIndex={-1}
+        className="mx-auto mt-10 w-full max-w-lg rounded-2xl bg-white shadow-xl focus:outline-none"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="inquiry-form-title"
+      >
+        <InquiryForm
+          key={procedure.id} // force remount when procedure changes
+          procedure={procedure}
+          selectedAddOns={addOns}
+          totalPrice={totalPrice}
+          onCancel={onCancel}
+        />
+      </div>
+    </div>
+  );
+}
 
 function Home() {
   // Data & UI state
@@ -196,26 +245,19 @@ function Home() {
 
             {/* Inquiry Form */}
             {showInquiryForm && inquiryProcedure && (
-              <div className="fixed inset-0 z-50 overflow-y-auto bg-black/50 p-4">
-                <div
-                  className="mx-auto mt-10 w-full max-w-lg rounded-2xl bg-white shadow-xl"
-                  role="dialog"
-                  aria-modal="true"
-                  aria-labelledby="inquiry-form-title"
-                >
-                  <InquiryForm
-                    key={inquiryProcedure.id} // force remount when procedure changes
-                    procedure={inquiryProcedure}
-                    selectedAddOns={inquiryAddOns}
-                    totalPrice={inquiryTotal}
-                    onCancel={handleCancelInquiry}
-                  />
-                </div>
-              </div>
+              <InquiryModal
+                procedure={inquiryProcedure}
+                addOns={inquiryAddOns}
+                totalPrice={inquiryTotal}
+                onCancel={handleCancelInquiry}
+              />
             )}
 
             {/* Results count */}
-            <p className="mb-4 text-sm text-slate-500">
+            <p
+              aria-live="polite"
+              className="mb-4 text-sm text-slate-500"
+            >
               Showing {filteredProcedures.length}{" "}
               {filteredProcedures.length === 1 ? "treatment" : "treatments"}
             </p>

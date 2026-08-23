@@ -18,7 +18,9 @@ function AdminDashboard() {
   };
 
   inquiries.forEach((inquiry) => {
-    inquiryCounts[inquiry.status] += 1;
+    if (inquiry.status in inquiryCounts) {
+      inquiryCounts[inquiry.status] += 1;
+    }
   });
 
   async function handleLogout() {

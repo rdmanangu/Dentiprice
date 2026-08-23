@@ -14,7 +14,15 @@ function AdminRoute({ children }: AdminRouteProps) {
     async function checkAuth() {
       const {
         data: { session },
+        error,
       } = await supabase.auth.getSession();
+
+      if (error) {
+        console.error(
+          "Unable to verify admin session:",
+          error
+        );
+      }
 
       setAuthenticated(session?.user.app_metadata.role === "admin");
       setLoading(false);

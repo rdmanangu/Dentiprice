@@ -9,6 +9,7 @@ import {
   updateInquiryStatus,
   type InquiryItem,
 } from "../../services/inquiries";
+import { useDialogBehavior } from "../../lib/useDialogBehavior";
 import { InquiryStatusBadge } from "./primitives";
 
 type InquiryDetailsProps = {
@@ -24,6 +25,14 @@ function isInquiryStatus(value: string): value is InquiryStatus {
     value === "cancelled" ||
     value === "completed"
   );
+}
+
+function formatDateTime(value: string): string {
+  const date = new Date(value);
+
+  return Number.isNaN(date.getTime())
+    ? value
+    : date.toLocaleString();
 }
 
 function InquiryDetails({
@@ -44,6 +53,16 @@ function InquiryDetails({
 
   const [statusError, setStatusError] =
     useState<string | null>(null);
+
+  const dialogRef = useDialogBehavior(onClose);
+
+  function handleBackdropClick(
+    event: React.MouseEvent<HTMLDivElement>
+  ) {
+    if (event.target === event.currentTarget) {
+      onClose();
+    }
+  }
 
   // ─────────────────────────────────────────────
   // LOAD INQUIRY ITEMS
@@ -135,9 +154,14 @@ function InquiryDetails({
   }
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-black/40 p-4">
+    <div
+      className="fixed inset-0 z-50 overflow-y-auto bg-black/40 p-4"
+      onClick={handleBackdropClick}
+    >
       <div
-        className="mx-auto mt-10 max-w-2xl rounded-2xl bg-white shadow-xl"
+        ref={dialogRef}
+        tabIndex={-1}
+        className="mx-auto mt-10 max-w-2xl rounded-2xl bg-white shadow-xl focus:outline-none"
         role="dialog"
         aria-modal="true"
         aria-labelledby="inquiry-details-title"
@@ -383,9 +407,7 @@ function InquiryDetails({
                 </p>
 
                 <p className="mt-1 text-sm text-slate-700">
-                  {new Date(
-                    inquiry.created_at
-                  ).toLocaleString()}
+                  {formatDateTime(inquiry.created_at)}
                 </p>
               </div>
 
@@ -395,9 +417,7 @@ function InquiryDetails({
                 </p>
 
                 <p className="mt-1 text-sm text-slate-700">
-                  {new Date(
-                    inquiry.updated_at
-                  ).toLocaleString()}
+                  {formatDateTime(inquiry.updated_at)}
                 </p>
               </div>
             </div>

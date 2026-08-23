@@ -217,31 +217,31 @@ function InquiryManager({
             <table className="min-w-full text-left">
               <thead className="border-b bg-slate-50">
                 <tr>
-                  <th className="px-6 py-4 text-sm font-semibold">
+                  <th scope="col" className="px-6 py-4 text-sm font-semibold">
                     Patient
                   </th>
 
-                  <th className="px-6 py-4 text-sm font-semibold">
+                  <th scope="col" className="px-6 py-4 text-sm font-semibold">
                     Contact
                   </th>
 
-                  <th className="px-6 py-4 text-sm font-semibold">
+                  <th scope="col" className="px-6 py-4 text-sm font-semibold">
                     Date
                   </th>
 
-                  <th className="px-6 py-4 text-sm font-semibold">
+                  <th scope="col" className="px-6 py-4 text-sm font-semibold">
                     Time
                   </th>
 
-                  <th className="px-6 py-4 text-sm font-semibold">
+                  <th scope="col" className="px-6 py-4 text-sm font-semibold">
                     Total
                   </th>
 
-                  <th className="px-6 py-4 text-sm font-semibold">
+                  <th scope="col" className="px-6 py-4 text-sm font-semibold">
                     Status
                   </th>
 
-                  <th className="px-6 py-4 text-sm font-semibold">
+                  <th scope="col" className="px-6 py-4 text-sm font-semibold">
                     Actions
                   </th>
                 </tr>
@@ -283,7 +283,9 @@ function InquiryManager({
 
                     <td className="px-6 py-4 font-medium">
                       ₱
-                      {inquiry.calculated_total_price.toLocaleString()}
+                      {Number(
+                        inquiry.calculated_total_price ?? 0
+                      ).toLocaleString()}
                     </td>
 
                     <td className="px-6 py-4">

@@ -169,27 +169,27 @@ function ProcedureManager() {
                         <table className="min-w-full text-left">
                             <thead className="border-b bg-slate-50">
                                 <tr>
-                                    <th className="px-6 py-4 text-sm font-semibold">
+                                    <th scope="col" className="px-6 py-4 text-sm font-semibold">
                                         Name
                                     </th>
 
-                                    <th className="px-6 py-4 text-sm font-semibold">
+                                    <th scope="col" className="px-6 py-4 text-sm font-semibold">
                                         Category
                                     </th>
 
-                                    <th className="px-6 py-4 text-sm font-semibold">
+                                    <th scope="col" className="px-6 py-4 text-sm font-semibold">
                                         Price
                                     </th>
 
-                                    <th className="px-6 py-4 text-sm font-semibold">
+                                    <th scope="col" className="px-6 py-4 text-sm font-semibold">
                                         Duration
                                     </th>
 
-                                    <th className="px-6 py-4 text-sm font-semibold">
+                                    <th scope="col" className="px-6 py-4 text-sm font-semibold">
                                         Image
                                     </th>
 
-                                    <th className="px-6 py-4 text-sm font-semibold">
+                                    <th scope="col" className="px-6 py-4 text-sm font-semibold">
                                         Actions
                                     </th>
                                 </tr>
@@ -217,11 +217,16 @@ function ProcedureManager() {
 
                                         <td className="px-6 py-4">
                                             ₱
-                                            {procedure.base_price.toLocaleString()}
+                                            {Number(
+                                                procedure.base_price ?? 0
+                                            ).toLocaleString()}
                                         </td>
 
                                         <td className="px-6 py-4 text-slate-600">
-                                            {procedure.estimated_duration_mins} min
+                                            {procedure.estimated_duration_mins !=
+                                            null
+                                                ? `${procedure.estimated_duration_mins} min`
+                                                : "—"}
                                         </td>
 
                                         <td className="px-6 py-4">

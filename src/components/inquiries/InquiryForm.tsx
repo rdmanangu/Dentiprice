@@ -207,6 +207,7 @@ function InquiryForm({
               setPatientName(event.target.value)
             }
             required
+            autoComplete="name"
             className="mt-2 w-full rounded-xl border border-slate-300 bg-white px-4 py-3 outline-none focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
           />
         </div>
@@ -227,6 +228,7 @@ function InquiryForm({
               setPhone(event.target.value)
             }
             required
+            autoComplete="tel"
             className="mt-2 w-full rounded-xl border border-slate-300 bg-white px-4 py-3 outline-none focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
           />
         </div>
@@ -247,6 +249,7 @@ function InquiryForm({
               setEmail(event.target.value)
             }
             required
+            autoComplete="email"
             className="mt-2 w-full rounded-xl border border-slate-300 bg-white px-4 py-3 outline-none focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
           />
         </div>

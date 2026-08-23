@@ -1,15 +1,24 @@
+import { lazy, Suspense } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 
 import Header from "./components/layout/Header";
 import Home from "./pages/Home";
-import AdminLogin from "./pages/AdminLogin";
-import AdminDashboard from "./pages/AdminDashboard";
 import AdminRoute from "./components/auth/AdminRoute";
+
+const AdminLogin = lazy(() => import("./pages/AdminLogin"));
+const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
 
 function App() {
   return (
     <BrowserRouter>
-      <Routes>
+      <Suspense
+        fallback={
+          <div className="flex min-h-screen items-center justify-center">
+            <p className="text-slate-500">Loading...</p>
+          </div>
+        }
+      >
+        <Routes>
         <Route
           path="/"
           element={
@@ -34,6 +43,7 @@ function App() {
           }
         />
       </Routes>
+      </Suspense>
     </BrowserRouter>
   );
 }

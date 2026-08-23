@@ -44,7 +44,7 @@ function ProcedureCard({
             <p className="text-xs text-slate-500">Starting at</p>
 
             <p className="text-lg font-bold text-slate-900">
-              ₱{procedure.base_price.toLocaleString()}
+              ₱{Number(procedure.base_price ?? 0).toLocaleString()}
             </p>
           </div>
 
@@ -52,7 +52,9 @@ function ProcedureCard({
             <p className="text-xs text-slate-500">Duration</p>
 
             <p className="text-sm font-medium text-slate-700">
-              {procedure.estimated_duration_mins} min
+              {procedure.estimated_duration_mins != null
+                ? `${procedure.estimated_duration_mins} min`
+                : "—"}
             </p>
           </div>
         </div>
