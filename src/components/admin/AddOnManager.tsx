@@ -1,11 +1,12 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { Procedure } from "../../types/procedure";
 import {
-    deleteProcedure,
-    getProcedures,
-} from "../../services/procedures";
-
-import ProcedureForm from "./ProcedureForm";
+  deleteAddOn,
+  getAllAddOns,
+  type AddOn,
+} from "../../services/addons";
+import { getProcedures } from "../../services/procedures";
+import AddOnForm from "./AddOnForm";
 import {
     ErrorAlert,
     LoadingLine,
@@ -20,44 +21,63 @@ function isErrorWithMessage(err: unknown): err is { message: string } {
     );
 }
 
-function ProcedureManager() {
+function AddOnManager() {
+    const [addOns, setAddOns] = useState<AddOn[]>([]);
     const [procedures, setProcedures] = useState<Procedure[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [showForm, setShowForm] = useState(false);
-    const [editingProcedure, setEditingProcedure] =
-        useState<Procedure | null>(null);
+    const [editingAddOn, setEditingAddOn] =
+        useState<AddOn | null>(null);
+
+    const procedureNameById = useMemo(() => {
+        const map = new Map<string, string>();
+
+        procedures.forEach((procedure) => {
+            map.set(procedure.id, procedure.name);
+        });
+
+        return map;
+    }, [procedures]);
 
     useEffect(() => {
         let cancelled = false;
 
-        getProcedures()
-            .then((data) => {
+        async function loadData() {
+            try {
+                const [addOnData, procedureData] =
+                    await Promise.all([
+                        getAllAddOns(),
+                        getProcedures(),
+                    ]);
+
                 if (!cancelled) {
-                    setProcedures(data);
+                    setAddOns(addOnData);
+                    setProcedures(procedureData);
                 }
-            })
-            .catch((err) => {
+            } catch (err) {
                 console.error(err);
 
                 if (!cancelled) {
-                    setError("Unable to load procedures.");
+                    setError("Unable to load add-ons.");
                 }
-            })
-            .finally(() => {
+            } finally {
                 if (!cancelled) {
                     setLoading(false);
                 }
-            });
+            }
+        }
+
+        loadData();
 
         return () => {
             cancelled = true;
         };
     }, []);
 
-    async function handleDelete(procedure: Procedure) {
+    async function handleDelete(addOn: AddOn) {
         const confirmed = window.confirm(
-            `Delete the procedure "${procedure.name}"? This action cannot be undone.`
+            `Delete the add-on "${addOn.name}"? This cannot be undone.`
         );
 
         if (!confirmed) {
@@ -66,11 +86,11 @@ function ProcedureManager() {
 
         try {
             setError(null);
-            await deleteProcedure(procedure.id);
+            await deleteAddOn(addOn.id);
 
-            setProcedures((current) =>
+            setAddOns((current) =>
                 current.filter(
-                    (currentProcedure) => currentProcedure.id !== procedure.id
+                    (currentAddOn) => currentAddOn.id !== addOn.id
                 )
             );
         } catch (err) {
@@ -78,7 +98,7 @@ function ProcedureManager() {
             setError(
                 isErrorWithMessage(err)
                     ? err.message
-                    : "Unable to delete procedure."
+                    : "Unable to delete add-on."
             );
         }
     }
@@ -86,7 +106,7 @@ function ProcedureManager() {
     if (loading) {
         return (
             <LoadingLine>
-                Loading procedures...
+                Loading add-ons...
             </LoadingLine>
         );
     }
@@ -96,46 +116,47 @@ function ProcedureManager() {
             <div className="flex items-center justify-between">
                 <div>
                     <h2 className="text-xl font-bold text-slate-900">
-                        Procedures
+                        Add-ons
                     </h2>
 
                     <p className="mt-1 text-sm text-slate-500">
-                        Manage your clinic's treatments and prices.
+                        Manage optional extras for each treatment.
                     </p>
                 </div>
 
                 <button
                     type="button"
                     onClick={() => {
-                        setEditingProcedure(null);
+                        setEditingAddOn(null);
                         setShowForm(true);
                     }}
                     className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900 focus-visible:ring-offset-2"
                 >
-                    Add procedure
+                    Add add-on
                 </button>
             </div>
 
             {showForm && (
                 <div className="mt-6">
-                    <ProcedureForm
-                        key={editingProcedure?.id ?? "new"}
-                        procedure={editingProcedure ?? undefined}
-                        onSaved={(savedProcedure) => {
-                            setProcedures((current) =>
+                    <AddOnForm
+                        key={editingAddOn?.id ?? "new"}
+                        procedures={procedures}
+                        addOn={editingAddOn ?? undefined}
+                        onSaved={(savedAddOn) => {
+                            setAddOns((current) =>
                                 current
-                                    .map((procedure) =>
-                                        procedure.id === savedProcedure.id
-                                            ? savedProcedure
-                                            : procedure
+                                    .map((addOn) =>
+                                        addOn.id === savedAddOn.id
+                                            ? savedAddOn
+                                            : addOn
                                     )
                                     .concat(
                                         current.some(
-                                            (procedure) =>
-                                                procedure.id === savedProcedure.id
+                                            (addOn) =>
+                                                addOn.id === savedAddOn.id
                                         )
                                             ? []
-                                            : [savedProcedure]
+                                            : [savedAddOn]
                                     )
                                     .sort((a, b) =>
                                         a.name.localeCompare(b.name)
@@ -143,11 +164,11 @@ function ProcedureManager() {
                             );
 
                             setShowForm(false);
-                            setEditingProcedure(null);
+                            setEditingAddOn(null);
                         }}
                         onCancel={() => {
                             setShowForm(false);
-                            setEditingProcedure(null);
+                            setEditingAddOn(null);
                         }}
                     />
                 </div>
@@ -159,9 +180,9 @@ function ProcedureManager() {
                 </ErrorAlert>
             )}
 
-            {procedures.length === 0 ? (
+            {addOns.length === 0 ? (
                 <p className="mt-8 rounded-xl bg-white p-6 text-slate-500">
-                    No procedures found.
+                    No add-ons found.
                 </p>
             ) : (
                 <div className="mt-6 overflow-hidden rounded-2xl bg-white shadow-sm">
@@ -174,7 +195,7 @@ function ProcedureManager() {
                                     </th>
 
                                     <th className="px-6 py-4 text-sm font-semibold">
-                                        Category
+                                        Procedure
                                     </th>
 
                                     <th className="px-6 py-4 text-sm font-semibold">
@@ -186,7 +207,7 @@ function ProcedureManager() {
                                     </th>
 
                                     <th className="px-6 py-4 text-sm font-semibold">
-                                        Image
+                                        Status
                                     </th>
 
                                     <th className="px-6 py-4 text-sm font-semibold">
@@ -196,53 +217,42 @@ function ProcedureManager() {
                             </thead>
 
                             <tbody>
-                                {procedures.map((procedure) => (
+                                {addOns.map((addOn) => (
                                     <tr
-                                        key={procedure.id}
+                                        key={addOn.id}
                                         className="border-b last:border-b-0"
                                     >
-                                        <td className="px-6 py-4">
-                                            <p className="font-medium text-slate-900">
-                                                {procedure.name}
-                                            </p>
-
-                                            <p className="mt-1 max-w-xs truncate text-xs text-slate-500">
-                                                {procedure.description}
-                                            </p>
+                                        <td className="px-6 py-4 font-medium text-slate-900">
+                                            {addOn.name}
                                         </td>
 
                                         <td className="px-6 py-4 text-slate-600">
-                                            {procedure.category}
+                                            {procedureNameById.get(
+                                                addOn.procedure_id
+                                            ) ?? "Unknown procedure"}
                                         </td>
 
                                         <td className="px-6 py-4">
                                             ₱
-                                            {procedure.base_price.toLocaleString()}
+                                            {Number(addOn.price).toLocaleString()}
                                         </td>
 
                                         <td className="px-6 py-4 text-slate-600">
-                                            {procedure.estimated_duration_mins} min
+                                            {addOn.duration_mins} min
                                         </td>
 
                                         <td className="px-6 py-4">
-                                            {procedure.image_url ? (
-                                                <a
-                                                    href={procedure.image_url}
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                    aria-label={`Open image for ${procedure.name}`}
-                                                >
-                                                    <img
-                                                        src={procedure.image_url}
-                                                        alt=""
-                                                        className="h-12 w-12 rounded-lg border border-slate-200 object-cover"
-                                                    />
-                                                </a>
-                                            ) : (
-                                                <span className="text-slate-400">
-                                                    —
-                                                </span>
-                                            )}
+                                            <span
+                                                className={`inline-flex rounded-full px-3 py-1 text-xs font-medium ${
+                                                    addOn.is_active
+                                                        ? "bg-emerald-50 text-emerald-700"
+                                                        : "bg-slate-100 text-slate-600"
+                                                }`}
+                                            >
+                                                {addOn.is_active
+                                                    ? "Active"
+                                                    : "Inactive"}
+                                            </span>
                                         </td>
 
                                         <td className="px-6 py-4">
@@ -250,10 +260,10 @@ function ProcedureManager() {
                                                 <button
                                                     type="button"
                                                     onClick={() => {
-                                                        setEditingProcedure(procedure);
+                                                        setEditingAddOn(addOn);
                                                         setShowForm(true);
                                                     }}
-                                                    aria-label={`Edit procedure ${procedure.name}`}
+                                                    aria-label={`Edit add-on ${addOn.name}`}
                                                     className="rounded-lg text-sm font-medium text-slate-700 hover:text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400"
                                                 >
                                                     Edit
@@ -261,8 +271,8 @@ function ProcedureManager() {
 
                                                 <button
                                                     type="button"
-                                                    onClick={() => handleDelete(procedure)}
-                                                    aria-label={`Delete procedure ${procedure.name}`}
+                                                    onClick={() => handleDelete(addOn)}
+                                                    aria-label={`Delete add-on ${addOn.name}`}
                                                     className="rounded-lg text-sm font-medium text-red-600 hover:text-red-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400"
                                                 >
                                                     Delete
@@ -280,4 +290,4 @@ function ProcedureManager() {
     );
 }
 
-export default ProcedureManager;
+export default AddOnManager;

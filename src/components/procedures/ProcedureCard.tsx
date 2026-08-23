@@ -31,9 +31,9 @@ function ProcedureCard({
           {procedure.category}
         </span>
 
-        <h2 className="text-xl font-semibold text-slate-900">
+        <h3 className="text-xl font-semibold text-slate-900">
           {procedure.name}
-        </h2>
+        </h3>
 
         <p className="mt-2 flex-1 text-sm leading-6 text-slate-600">
           {procedure.description}

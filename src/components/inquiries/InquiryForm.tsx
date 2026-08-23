@@ -130,7 +130,10 @@ function InquiryForm({
     >
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-slate-900">
+          <h2
+            id="inquiry-form-title"
+            className="text-2xl font-bold text-slate-900"
+          >
             Request a consultation
           </h2>
 
@@ -204,7 +207,7 @@ function InquiryForm({
               setPatientName(event.target.value)
             }
             required
-            className="mt-2 w-full rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-slate-900"
+            className="mt-2 w-full rounded-xl border border-slate-300 bg-white px-4 py-3 outline-none focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
           />
         </div>
 
@@ -224,7 +227,7 @@ function InquiryForm({
               setPhone(event.target.value)
             }
             required
-            className="mt-2 w-full rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-slate-900"
+            className="mt-2 w-full rounded-xl border border-slate-300 bg-white px-4 py-3 outline-none focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
           />
         </div>
 
@@ -244,7 +247,7 @@ function InquiryForm({
               setEmail(event.target.value)
             }
             required
-            className="mt-2 w-full rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-slate-900"
+            className="mt-2 w-full rounded-xl border border-slate-300 bg-white px-4 py-3 outline-none focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
           />
         </div>
 
@@ -265,7 +268,7 @@ function InquiryForm({
                 setPreferredDate(event.target.value)
               }
               required
-              className="mt-2 w-full rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-slate-900"
+              className="mt-2 w-full rounded-xl border border-slate-300 bg-white px-4 py-3 outline-none focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
             />
           </div>
 
@@ -284,7 +287,7 @@ function InquiryForm({
                 setPreferredTimeSlot(event.target.value)
               }
               required
-              className="mt-2 w-full rounded-xl border border-slate-300 bg-white px-4 py-3 outline-none focus:border-slate-900"
+              className="mt-2 w-full rounded-xl border border-slate-300 bg-white px-4 py-3 outline-none focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
             >
               <option value="">
                 Select a time

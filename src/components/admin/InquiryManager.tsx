@@ -9,8 +9,22 @@ import {
   updateInquiryStatus,
 } from "../../services/inquiries";
 import InquiryDetails from "./InquiryDetails";
+import {
+  ErrorAlert,
+  LoadingLine,
+} from "./primitives";
 
 type InquiryFilter = "all" | InquiryStatus;
+
+const inquiryStatusControlClasses: Record<
+  InquiryStatus,
+  string
+> = {
+  pending: "border-amber-300 bg-amber-50 text-amber-900",
+  confirmed: "border-emerald-300 bg-emerald-50 text-emerald-900",
+  cancelled: "border-slate-300 bg-slate-100 text-slate-700",
+  completed: "border-sky-300 bg-sky-50 text-sky-900",
+};
 
 const inquiryFilters: {
   label: string;
@@ -106,9 +120,9 @@ function InquiryManager({
     }
   }
 
-  async function handleDelete(id: string) {
+  async function handleDelete(inquiry: Inquiry) {
     const confirmed = window.confirm(
-      "Are you sure you want to delete this inquiry?"
+      `Delete the consultation request from ${inquiry.patient_name}? This action cannot be undone.`
     );
 
     if (!confirmed) {
@@ -117,10 +131,12 @@ function InquiryManager({
 
     try {
       setError(null);
-      await deleteInquiry(id);
+      await deleteInquiry(inquiry.id);
 
       setInquiries((current) =>
-        current.filter((inquiry) => inquiry.id !== id)
+        current.filter(
+          (currentInquiry) => currentInquiry.id !== inquiry.id
+        )
       );
     } catch (err) {
       console.error(err);
@@ -146,9 +162,9 @@ function InquiryManager({
 
   if (loading) {
     return (
-      <p className="text-slate-500">
+      <LoadingLine>
         Loading inquiries...
-      </p>
+      </LoadingLine>
     );
   }
 
@@ -174,7 +190,7 @@ function InquiryManager({
             key={filter.value}
             type="button"
             onClick={() => setActiveFilter(filter.value)}
-            className={`rounded-lg px-4 py-2 text-sm font-medium ${
+            className={`rounded-lg px-4 py-2 text-sm font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 ${
               activeFilter === filter.value
                 ? "bg-slate-900 text-white"
                 : "bg-white text-slate-700 hover:bg-slate-100"
@@ -186,12 +202,9 @@ function InquiryManager({
       </div>
 
       {error && (
-        <p
-          role="alert"
-          className="mt-4 rounded-xl bg-red-50 p-4 text-sm text-red-700"
-        >
+        <ErrorAlert className="mt-4">
           {error}
-        </p>
+        </ErrorAlert>
       )}
 
       {filteredInquiries.length === 0 ? (
@@ -283,7 +296,8 @@ function InquiryManager({
                             handleStatusChange(inquiry.id, status);
                           }
                         }}
-                        className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                        aria-label={`Change status for inquiry from ${inquiry.patient_name}`}
+                        className={`rounded-lg px-3 py-2 text-sm ${inquiryStatusControlClasses[inquiry.status]}`}
                       >
                         <option value="pending">
                           Pending
@@ -307,15 +321,17 @@ function InquiryManager({
                           <button
                             type="button"
                             onClick={() => setSelectedInquiry(inquiry)}
-                            className="text-sm font-medium text-slate-900 hover:underline"
+                            aria-label={`View details for inquiry from ${inquiry.patient_name}`}
+                            className="rounded-lg text-sm font-medium text-slate-900 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400"
                           >
                             View
                           </button>
 
                           <button
                             type="button"
-                            onClick={() => handleDelete(inquiry.id)}
-                            className="text-sm font-medium text-red-600 hover:text-red-800"
+                            onClick={() => handleDelete(inquiry)}
+                            aria-label={`Delete inquiry from ${inquiry.patient_name}`}
+                            className="rounded-lg text-sm font-medium text-red-600 hover:text-red-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400"
                           >
                             Delete
                           </button>

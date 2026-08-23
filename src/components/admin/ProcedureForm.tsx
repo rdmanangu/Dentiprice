@@ -4,12 +4,22 @@ import {
   createProcedure,
   updateProcedure,
 } from "../../services/procedures";
+import { ErrorAlert } from "./primitives";
 
 type ProcedureFormProps = {
   procedure?: Procedure;
   onSaved: (procedure: Procedure) => void;
   onCancel: () => void;
 };
+
+function isErrorWithMessage(err: unknown): err is { message: string } {
+  return (
+    typeof err === "object" &&
+    err !== null &&
+    "message" in err &&
+    typeof err.message === "string"
+  );
+}
 
 function ProcedureForm({
   procedure,
@@ -108,9 +118,11 @@ function ProcedureForm({
     } catch (err) {
       console.error(err);
       setError(
-        procedure
-          ? "Unable to update procedure."
-          : "Unable to create procedure."
+        isErrorWithMessage(err)
+          ? err.message
+          : procedure
+            ? "Unable to update procedure."
+            : "Unable to create procedure."
       );
     } finally {
       setLoading(false);
@@ -267,19 +279,14 @@ function ProcedureForm({
         </div>
 
         {error && (
-          <p
-            role="alert"
-            className="rounded-xl bg-red-50 p-4 text-sm text-red-700"
-          >
-            {error}
-          </p>
+          <ErrorAlert>{error}</ErrorAlert>
         )}
 
         <div className="flex gap-3">
           <button
             type="submit"
             disabled={loading}
-            className="rounded-xl bg-slate-900 px-5 py-3 font-semibold text-white hover:bg-slate-700 disabled:opacity-50"
+            className="rounded-xl bg-slate-900 px-5 py-3 font-semibold text-white hover:bg-slate-700 disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900 focus-visible:ring-offset-2"
           >
             {loading
               ? "Saving..."
@@ -292,7 +299,7 @@ function ProcedureForm({
             type="button"
             onClick={onCancel}
             disabled={loading}
-            className="rounded-xl border border-slate-300 px-5 py-3 font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+            className="rounded-xl border border-slate-300 px-5 py-3 font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400"
           >
             Cancel
           </button>

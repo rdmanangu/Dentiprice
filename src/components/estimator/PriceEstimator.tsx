@@ -87,7 +87,10 @@ useEffect(() => {
 
   if (!procedure) {
     return (
-      <aside className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+      <aside
+        aria-label="Price estimator"
+        className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm"
+      >
         <h2 className="text-xl font-bold text-slate-900">
           Price estimator
         </h2>
@@ -118,7 +121,7 @@ useEffect(() => {
         <button
           type="button"
           onClick={onClear}
-          className="text-sm font-medium text-slate-500 hover:text-slate-900"
+          className="rounded-lg text-sm font-medium text-slate-500 hover:text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400"
         >
           Clear
         </button>
@@ -183,7 +186,7 @@ useEffect(() => {
                   type="checkbox"
                   checked={selectedAddOnIds.includes(addOn.id)}
                   onChange={() => toggleAddOn(addOn.id)}
-                  className="h-4 w-4"
+                  className="h-4 w-4 accent-slate-900"
                 />
 
                 <span className="font-medium text-slate-800">
@@ -240,7 +243,7 @@ useEffect(() => {
             totalPrice
           )
         }
-        className="mt-5 w-full rounded-xl bg-slate-900 px-4 py-3 font-semibold text-white hover:bg-slate-700"
+        className="mt-5 w-full rounded-xl bg-slate-900 px-4 py-3 font-semibold text-white hover:bg-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900 focus-visible:ring-offset-2"
       >
         Request consultation
       </button>

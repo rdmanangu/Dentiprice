@@ -9,6 +9,7 @@ import {
   updateInquiryStatus,
   type InquiryItem,
 } from "../../services/inquiries";
+import { InquiryStatusBadge } from "./primitives";
 
 type InquiryDetailsProps = {
   inquiry: Inquiry;
@@ -162,7 +163,7 @@ function InquiryDetails({
           <button
             type="button"
             onClick={onClose}
-            className="rounded-lg px-3 py-2 text-slate-500 hover:bg-slate-100 hover:text-slate-900"
+            className="rounded-lg px-3 py-2 text-slate-500 hover:bg-slate-100 hover:text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400"
             aria-label="Close inquiry details"
           >
             ✕
@@ -316,9 +317,13 @@ function InquiryDetails({
           ─────────────────────────────────── */}
 
           <section>
-            <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-500">
-              Status
-            </h3>
+            <div className="flex items-center justify-between gap-4">
+              <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-500">
+                Status
+              </h3>
+
+              <InquiryStatusBadge status={status} />
+            </div>
 
             <select
               value={status}
@@ -330,7 +335,8 @@ function InquiryDetails({
                   handleStatusChange(newStatus);
                 }
               }}
-              className="mt-2 w-full rounded-xl border border-slate-300 bg-white px-4 py-3 font-medium capitalize text-slate-900 outline-none focus:border-slate-900 disabled:cursor-not-allowed disabled:opacity-50"
+              aria-label="Update inquiry status"
+              className="mt-2 w-full rounded-xl border border-slate-300 bg-white px-4 py-3 font-medium capitalize text-slate-900 outline-none focus:border-slate-500 focus:ring-2 focus:ring-slate-200 disabled:cursor-not-allowed disabled:opacity-50"
             >
               <option value="pending">
                 Pending
@@ -406,7 +412,7 @@ function InquiryDetails({
           <button
             type="button"
             onClick={onClose}
-            className="rounded-xl bg-slate-900 px-5 py-3 font-semibold text-white hover:bg-slate-700"
+            className="rounded-xl bg-slate-900 px-5 py-3 font-semibold text-white hover:bg-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900 focus-visible:ring-offset-2"
           >
             Close
           </button>

@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 import ProcedureManager from "../components/admin/ProcedureManager";
+import AddOnManager from "../components/admin/AddOnManager";
 import InquiryManager from "../components/admin/InquiryManager";
 import type { Inquiry, InquiryStatus } from "../types/inquiry";
 
@@ -42,7 +43,7 @@ function AdminDashboard() {
           <button
             type="button"
             onClick={handleLogout}
-            className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-medium hover:bg-slate-50"
+            className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-medium hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400"
           >
             Sign out
           </button>
@@ -96,28 +97,12 @@ function AdminDashboard() {
           </div>
         </div>
 
-        <div className="mt-6 grid gap-6 sm:grid-cols-2">
-            <ProcedureManager />
-            <InquiryManager onInquiriesChange={setInquiries} />
-          <div className="rounded-2xl bg-white p-6 shadow-sm">
-            <h3 className="font-semibold text-slate-900">
-              Procedures
-            </h3>
+        <div className="mt-6 space-y-6">
+          <ProcedureManager />
 
-            <p className="mt-2 text-sm text-slate-500">
-              Manage dental treatments and prices.
-            </p>
-          </div>
+          <AddOnManager />
 
-          <div className="rounded-2xl bg-white p-6 shadow-sm">
-            <h3 className="font-semibold text-slate-900">
-              Inquiries
-            </h3>
-
-            <p className="mt-2 text-sm text-slate-500">
-              Review consultation requests.
-            </p>
-          </div>
+          <InquiryManager onInquiriesChange={setInquiries} />
         </div>
       </section>
     </main>
