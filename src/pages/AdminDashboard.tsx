@@ -1,9 +1,24 @@
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 import ProcedureManager from "../components/admin/ProcedureManager";
 import InquiryManager from "../components/admin/InquiryManager";
+import type { Inquiry, InquiryStatus } from "../types/inquiry";
+
 function AdminDashboard() {
   const navigate = useNavigate();
+  const [inquiries, setInquiries] = useState<Inquiry[]>([]);
+
+  const inquiryCounts: Record<InquiryStatus, number> = {
+    pending: 0,
+    confirmed: 0,
+    cancelled: 0,
+    completed: 0,
+  };
+
+  inquiries.forEach((inquiry) => {
+    inquiryCounts[inquiry.status] += 1;
+  });
 
   async function handleLogout() {
     await supabase.auth.signOut();
@@ -39,9 +54,51 @@ function AdminDashboard() {
           Dashboard
         </h2>
 
+        <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="rounded-2xl bg-white p-6 shadow-sm">
+            <p className="text-sm font-medium text-slate-500">
+              Total inquiries
+            </p>
+
+            <p className="mt-2 text-3xl font-bold text-slate-900">
+              {inquiries.length}
+            </p>
+          </div>
+
+          <div className="rounded-2xl bg-white p-6 shadow-sm">
+            <p className="text-sm font-medium text-slate-500">
+              Pending inquiries
+            </p>
+
+            <p className="mt-2 text-3xl font-bold text-slate-900">
+              {inquiryCounts.pending}
+            </p>
+          </div>
+
+          <div className="rounded-2xl bg-white p-6 shadow-sm">
+            <p className="text-sm font-medium text-slate-500">
+              Confirmed inquiries
+            </p>
+
+            <p className="mt-2 text-3xl font-bold text-slate-900">
+              {inquiryCounts.confirmed}
+            </p>
+          </div>
+
+          <div className="rounded-2xl bg-white p-6 shadow-sm">
+            <p className="text-sm font-medium text-slate-500">
+              Completed inquiries
+            </p>
+
+            <p className="mt-2 text-3xl font-bold text-slate-900">
+              {inquiryCounts.completed}
+            </p>
+          </div>
+        </div>
+
         <div className="mt-6 grid gap-6 sm:grid-cols-2">
             <ProcedureManager />
-            <InquiryManager />
+            <InquiryManager onInquiriesChange={setInquiries} />
           <div className="rounded-2xl bg-white p-6 shadow-sm">
             <h3 className="font-semibold text-slate-900">
               Procedures

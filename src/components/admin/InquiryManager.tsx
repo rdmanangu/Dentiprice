@@ -10,11 +10,50 @@ import {
 } from "../../services/inquiries";
 import InquiryDetails from "./InquiryDetails";
 
-function InquiryManager() {
+type InquiryFilter = "all" | InquiryStatus;
+
+const inquiryFilters: {
+  label: string;
+  value: InquiryFilter;
+}[] = [
+  { label: "All", value: "all" },
+  { label: "Pending", value: "pending" },
+  { label: "Confirmed", value: "confirmed" },
+  { label: "Cancelled", value: "cancelled" },
+  { label: "Completed", value: "completed" },
+];
+
+function isInquiryStatus(value: string): value is InquiryStatus {
+  return (
+    value === "pending" ||
+    value === "confirmed" ||
+    value === "cancelled" ||
+    value === "completed"
+  );
+}
+
+type InquiryManagerProps = {
+  onInquiriesChange: (inquiries: Inquiry[]) => void;
+};
+
+function InquiryManager({
+  onInquiriesChange,
+}: InquiryManagerProps) {
   const [inquiries, setInquiries] = useState<Inquiry[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedInquiry, setSelectedInquiry] = useState<Inquiry | null>(null);
+  const [activeFilter, setActiveFilter] =
+    useState<InquiryFilter>("all");
+
+  const filteredInquiries = inquiries.filter(
+    (inquiry) =>
+      activeFilter === "all" || inquiry.status === activeFilter
+  );
+
+  useEffect(() => {
+    onInquiriesChange(inquiries);
+  }, [inquiries, onInquiriesChange]);
 
   useEffect(() => {
     let cancelled = false;
@@ -93,6 +132,18 @@ function InquiryManager() {
     }
   }
 
+  function handleDetailsStatusUpdated(updated: Inquiry) {
+    setInquiries((current) =>
+      current.map((inquiry) =>
+        inquiry.id === updated.id ? updated : inquiry
+      )
+    );
+
+    setSelectedInquiry((current) =>
+      current?.id === updated.id ? updated : current
+    );
+  }
+
   if (loading) {
     return (
       <p className="text-slate-500">
@@ -111,6 +162,27 @@ function InquiryManager() {
         <p className="mt-1 text-sm text-slate-500">
           Manage consultation requests from patients.
         </p>
+
+        <p className="mt-2 text-sm text-slate-500">
+          {filteredInquiries.length} {filteredInquiries.length === 1 ? "inquiry" : "inquiries"}
+        </p>
+      </div>
+
+      <div className="mt-4 flex flex-wrap gap-2">
+        {inquiryFilters.map((filter) => (
+          <button
+            key={filter.value}
+            type="button"
+            onClick={() => setActiveFilter(filter.value)}
+            className={`rounded-lg px-4 py-2 text-sm font-medium ${
+              activeFilter === filter.value
+                ? "bg-slate-900 text-white"
+                : "bg-white text-slate-700 hover:bg-slate-100"
+            }`}
+          >
+            {filter.label}
+          </button>
+        ))}
       </div>
 
       {error && (
@@ -122,9 +194,9 @@ function InquiryManager() {
         </p>
       )}
 
-      {inquiries.length === 0 ? (
+      {filteredInquiries.length === 0 ? (
         <p className="mt-6 rounded-xl bg-white p-6 text-slate-500">
-          No inquiries found.
+          No inquiries found for this status.
         </p>
       ) : (
         <div className="mt-6 overflow-hidden rounded-2xl bg-white shadow-sm">
@@ -163,7 +235,7 @@ function InquiryManager() {
               </thead>
 
               <tbody>
-                {inquiries.map((inquiry) => (
+                {filteredInquiries.map((inquiry) => (
                   <tr
                     key={inquiry.id}
                     className="border-b last:border-b-0"
@@ -204,25 +276,17 @@ function InquiryManager() {
                     <td className="px-6 py-4">
                       <select
                         value={inquiry.status}
-                        onChange={(event) =>
-                          handleStatusChange(
-                            inquiry.id,
-                            event.target
-                              .value as InquiryStatus
-                          )
-                        }
+                        onChange={(event) => {
+                          const status = event.target.value;
+
+                          if (isInquiryStatus(status)) {
+                            handleStatusChange(inquiry.id, status);
+                          }
+                        }}
                         className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
                       >
                         <option value="pending">
                           Pending
-                        </option>
-
-                        <option value="new">
-                          New
-                        </option>
-
-                        <option value="contacted">
-                          Contacted
                         </option>
 
                         <option value="confirmed">
@@ -268,6 +332,7 @@ function InquiryManager() {
         <InquiryDetails
           inquiry={selectedInquiry}
           onClose={() => setSelectedInquiry(null)}
+          onStatusUpdated={handleDetailsStatusUpdated}
         />
       )}
     </section>

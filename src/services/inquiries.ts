@@ -1,8 +1,31 @@
 import { supabase } from "../lib/supabase";
-import type { Inquiry, InquiryStatus, CreateInquiryInput } from "../types/inquiry";
+import type {
+  Inquiry,
+  InquiryStatus,
+  CreateInquiryInput,
+} from "../types/inquiry";
 
-// ─── CREATE (atomic via RPC) ──────────────────────────
-export async function createInquiry(input: CreateInquiryInput) {
+// ─────────────────────────────────────────────
+// INQUIRY ITEM TYPE
+// ─────────────────────────────────────────────
+
+export type InquiryItem = {
+  id: string;
+  inquiry_id: string;
+  procedure_id: string | null;
+  add_on_id: string | null;
+  item_name: string;
+  item_price: number;
+};
+
+// ─────────────────────────────────────────────
+// CREATE INQUIRY
+// Uses the atomic Supabase RPC
+// ─────────────────────────────────────────────
+
+export async function createInquiry(
+  input: CreateInquiryInput
+) {
   const {
     patientName,
     phone,
@@ -16,7 +39,10 @@ export async function createInquiry(input: CreateInquiryInput) {
     preferredTimeSlot,
   } = input;
 
-  // Build the items array for the RPC
+  // Build the inquiry_items payload.
+  //
+  // The main procedure is stored as a procedure item.
+  // Each selected add-on is stored as an add-on item.
   const items = [
     {
       procedure_id: procedureId,
@@ -24,6 +50,7 @@ export async function createInquiry(input: CreateInquiryInput) {
       item_name: procedureName,
       item_price: procedurePrice,
     },
+
     ...selectedAddOns.map((addOn) => ({
       procedure_id: null,
       add_on_id: addOn.id,
@@ -32,59 +59,120 @@ export async function createInquiry(input: CreateInquiryInput) {
     })),
   ];
 
-  // Call the database function
-  const { data, error } = await supabase.rpc('create_inquiry_with_items', {
-    p_patient_name: patientName.trim(),
-    p_phone: phone.trim(),
-    p_email: email.trim().toLowerCase(),
-    p_calculated_total_price: totalPrice,
-    p_preferred_date: preferredDate,
-    p_preferred_time_slot: preferredTimeSlot,
-    p_items: items, // send as JSONB
-  });
+  const { data, error } = await supabase.rpc(
+    "create_inquiry_with_items",
+    {
+      p_patient_name: patientName.trim(),
+      p_phone: phone.trim(),
+      p_email: email.trim().toLowerCase(),
+      p_calculated_total_price: totalPrice,
+      p_preferred_date: preferredDate,
+      p_preferred_time_slot: preferredTimeSlot,
+      p_items: items,
+    }
+  );
 
   if (error) {
-    console.error('RPC create_inquiry_with_items error:', error);
+    console.error(
+      "RPC create_inquiry_with_items error:",
+      error
+    );
+
     throw error;
   }
 
-  return data as { id: string; status: string; patient_name: string };
+  return data as {
+    id: string;
+    status: string;
+    patient_name: string;
+  };
 }
 
-// ─── READ all inquiries ────────────────────────────────
+// ─────────────────────────────────────────────
+// GET ALL INQUIRIES
+// ─────────────────────────────────────────────
+
 export async function getInquiries(): Promise<Inquiry[]> {
   const { data, error } = await supabase
-    .from('inquiries')
-    .select('*')
-    .order('created_at', { ascending: false });
+    .from("inquiries")
+    .select("*")
+    .order("created_at", {
+      ascending: false,
+    });
 
   if (error) {
-    console.error('Get inquiries error:', error);
+    console.error("Get inquiries error:", error);
     throw error;
   }
 
   return data ?? [];
 }
 
-// ─── UPDATE status ──────────────────────────────────────
-export async function updateInquiryStatus(id: string, status: InquiryStatus): Promise<Inquiry> {
+// ─────────────────────────────────────────────
+// GET INQUIRY ITEMS
+// Used by InquiryDetails
+// ─────────────────────────────────────────────
+
+export async function getInquiryItems(
+  inquiryId: string
+): Promise<InquiryItem[]> {
   const { data, error } = await supabase
-    .from('inquiries')
-    .update({ status })
-    .eq('id', id)
+    .from("inquiry_items")
+    .select("*")
+    .eq("inquiry_id", inquiryId)
+    .order("id", {
+      ascending: true,
+    });
+
+  if (error) {
+    console.error(
+      "Get inquiry items error:",
+      error
+    );
+
+    throw error;
+  }
+
+  return data ?? [];
+}
+
+// ─────────────────────────────────────────────
+// UPDATE INQUIRY STATUS
+// ─────────────────────────────────────────────
+
+export async function updateInquiryStatus(
+  id: string,
+  status: InquiryStatus
+): Promise<Inquiry> {
+  const { data, error } = await supabase
+    .from("inquiries")
+    .update({
+      status,
+    })
+    .eq("id", id)
     .select()
     .single();
 
   if (error) {
-    console.error('Update inquiry status error:', error);
+    console.error(
+      "Update inquiry status error:",
+      error
+    );
+
     throw error;
   }
 
   return data;
 }
 
-// ─── DELETE (requires authentication) ──────────────────
-export async function deleteInquiry(id: string): Promise<void> {
+// ─────────────────────────────────────────────
+// DELETE INQUIRY
+// Requires authenticated admin session
+// ─────────────────────────────────────────────
+
+export async function deleteInquiry(
+  id: string
+): Promise<void> {
   const {
     data: { session },
     error: sessionError,
@@ -95,47 +183,30 @@ export async function deleteInquiry(id: string): Promise<void> {
   }
 
   if (!session) {
-    throw new Error('You must be signed in to delete an inquiry.');
+    throw new Error(
+      "You must be signed in to delete an inquiry."
+    );
   }
 
   const { data, error } = await supabase
-    .from('inquiries')
+    .from("inquiries")
     .delete()
-    .eq('id', id)
-    .select('id')
+    .eq("id", id)
+    .select("id")
     .maybeSingle();
 
   if (error) {
-    console.error('Delete inquiry error:', error);
+    console.error(
+      "Delete inquiry error:",
+      error
+    );
+
     throw error;
   }
 
   if (!data) {
-    throw new Error('The inquiry was not deleted. Your account may not have permission.');
+    throw new Error(
+      "The inquiry was not deleted. Your account may not have permission."
+    );
   }
-}
-
-export type InquiryItem = {
-  id: string;
-  inquiry_id: string;
-  procedure_id: string | null;
-  add_on_id: string | null;
-  item_name: string;
-  item_price: number;
-};
-
-export async function getInquiryItems(
-  inquiryId: string
-): Promise<InquiryItem[]> {
-  const { data, error } = await supabase
-    .from("inquiry_items")
-    .select("*")
-    .eq("inquiry_id", inquiryId);
-
-  if (error) {
-    console.error("Get inquiry items error:", error);
-    throw error;
-  }
-
-  return data ?? [];
 }
