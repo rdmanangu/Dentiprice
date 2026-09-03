@@ -1,3 +1,5 @@
+import { Select } from "../ui";
+
 type ProcedureFiltersProps = {
   category: string;
   sort: string;
@@ -18,16 +20,15 @@ function ProcedureFilters({
       <div>
         <label
           htmlFor="category-filter"
-          className="mb-2 block text-sm font-medium text-slate-700"
+          className="mb-2 block text-sm font-medium text-ink"
         >
           Category
         </label>
 
-        <select
+        <Select
           id="category-filter"
           value={category}
           onChange={(event) => onCategoryChange(event.target.value)}
-          className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
         >
           <option value="all">All categories</option>
 
@@ -36,29 +37,28 @@ function ProcedureFilters({
               {item}
             </option>
           ))}
-        </select>
+        </Select>
       </div>
 
       <div>
         <label
           htmlFor="sort-filter"
-          className="mb-2 block text-sm font-medium text-slate-700"
+          className="mb-2 block text-sm font-medium text-ink"
         >
           Sort by
         </label>
 
-        <select
+        <Select
           id="sort-filter"
           value={sort}
           onChange={(event) => onSortChange(event.target.value)}
-          className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
         >
           <option value="name">Name</option>
           <option value="price-asc">Price: Low to High</option>
           <option value="price-desc">Price: High to Low</option>
           <option value="duration-asc">Duration: Shortest First</option>
           <option value="duration-desc">Duration: Longest First</option>
-        </select>
+        </Select>
       </div>
     </div>
   );

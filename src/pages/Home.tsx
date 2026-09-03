@@ -5,9 +5,8 @@ import ProcedureFilters from "../components/procedures/ProcedureFilters";
 import { getProcedures } from "../services/procedures";
 import PriceEstimator from "../components/estimator/PriceEstimator";
 import InquiryForm from "../components/inquiries/InquiryForm";
-import { useDialogBehavior } from "../lib/useDialogBehavior";
+import { Modal } from "../components/ui";
 import type { Procedure } from "../types/procedure";
-
 
 type AddOn = {
   id: string;
@@ -28,38 +27,22 @@ function InquiryModal({
   totalPrice,
   onCancel,
 }: InquiryModalProps) {
-  const dialogRef = useDialogBehavior(onCancel);
-
-  function handleBackdropClick(
-    event: React.MouseEvent<HTMLDivElement>
-  ) {
-    if (event.target === event.currentTarget) {
-      onCancel();
-    }
-  }
-
   return (
-    <div
-      className="fixed inset-0 z-50 overflow-y-auto bg-black/50 p-4"
-      onClick={handleBackdropClick}
+    <Modal
+      title="Request a consultation"
+      subtitle="Send your preferred appointment details to the clinic."
+      onClose={onCancel}
+      maxWidth="lg"
+      labelledBy="inquiry-form-title"
     >
-      <div
-        ref={dialogRef}
-        tabIndex={-1}
-        className="mx-auto mt-10 w-full max-w-lg rounded-2xl bg-white shadow-xl focus:outline-none"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="inquiry-form-title"
-      >
-        <InquiryForm
-          key={procedure.id} // force remount when procedure changes
-          procedure={procedure}
-          selectedAddOns={addOns}
-          totalPrice={totalPrice}
-          onCancel={onCancel}
-        />
-      </div>
-    </div>
+      <InquiryForm
+        key={procedure.id} // force remount when procedure changes
+        procedure={procedure}
+        selectedAddOns={addOns}
+        totalPrice={totalPrice}
+        onCancel={onCancel}
+      />
+    </Modal>
   );
 }
 
@@ -169,22 +152,22 @@ function Home() {
   return (
     <>
       {/* Hero Section */}
-      <section className="bg-slate-900">
+      <section className="bg-gradient-to-br from-primary via-accent to-cta">
         <div className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
           <div className="max-w-3xl">
-            <p className="text-sm font-semibold uppercase tracking-wider text-slate-300">
+            <p className="text-sm font-semibold uppercase tracking-wider text-white/80">
               Dental care made simple
             </p>
             <h1 className="mt-4 text-4xl font-bold tracking-tight text-white sm:text-5xl">
               Find the right dental treatment and estimate your cost.
             </h1>
-            <p className="mt-6 text-lg leading-8 text-slate-300">
+            <p className="mt-6 text-lg leading-8 text-white/90">
               Explore available treatments, compare prices, and request
               a consultation with our clinic.
             </p>
             <a
               href="#procedures"
-              className="mt-8 inline-block rounded-xl bg-white px-5 py-3 font-semibold text-slate-900 hover:bg-slate-100"
+              className="mt-8 inline-block rounded-control bg-white px-5 py-3 font-semibold text-primary shadow-md hover:bg-white/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
             >
               Explore treatments
             </a>
@@ -198,7 +181,7 @@ function Home() {
         className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8"
       >
         <div className="mb-8">
-          <h2 className="text-3xl font-bold text-slate-900">Our treatments</h2>
+          <h2 className="text-3xl font-bold text-ink">Our treatments</h2>
           <p className="mt-2 text-slate-600">
             Browse our available dental services.
           </p>
@@ -218,7 +201,7 @@ function Home() {
         )}
 
         {loading && (
-          <p className="py-12 text-center text-slate-500">
+          <p className="py-12 text-center text-slate-500" role="status">
             Loading treatments...
           </p>
         )}
@@ -226,7 +209,7 @@ function Home() {
         {error && (
           <p
             role="alert"
-            className="rounded-xl border border-red-200 bg-red-50 p-4 text-red-700"
+            className="rounded-card border border-error-border bg-error-bg p-4 font-medium text-error"
           >
             {error}
           </p>

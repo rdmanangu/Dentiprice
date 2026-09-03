@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabase";
+import { Button, Card, Field, Input } from "../components/ui";
 
 function AdminLogin() {
   const navigate = useNavigate();
@@ -36,82 +37,53 @@ function AdminLogin() {
   }
 
   return (
-    <main className="min-h-screen bg-slate-100 px-4 py-12">
-      <div className="mx-auto max-w-md">
-        <div className="rounded-2xl bg-white p-8 shadow-sm">
-          <h1 className="text-2xl font-bold text-slate-900">
-            Clinic Admin
-          </h1>
+    <main className="flex min-h-screen items-center justify-center bg-bg px-4 py-12">
+      <Card className="w-full max-w-md p-8">
+        <h1 className="text-2xl font-bold text-ink">
+          Clinic Admin
+        </h1>
 
-          <p className="mt-2 text-sm text-slate-600">
-            Sign in to manage Dentiprice.
-          </p>
+        <p className="mt-2 text-sm text-slate-600">
+          Sign in to manage <span className="font-semibold text-primary">DentiPrice</span>.
+        </p>
 
-          <form
-            onSubmit={handleSubmit}
-            className="mt-6 space-y-5"
-          >
-            <div>
-              <label
-                htmlFor="admin-email"
-                className="block text-sm font-medium text-slate-700"
-              >
-                Email
-              </label>
+        <form onSubmit={handleSubmit} className="mt-6 space-y-5">
+          <Field label="Email" htmlFor="admin-email" required>
+            <Input
+              id="admin-email"
+              type="email"
+              value={email}
+              onChange={(event) => setEmail(event.target.value)}
+              required
+              autoComplete="email"
+            />
+          </Field>
 
-              <input
-                id="admin-email"
-                type="email"
-                value={email}
-                onChange={(event) =>
-                  setEmail(event.target.value)
-                }
-                required
-                autoComplete="email"
-                className="mt-2 w-full rounded-xl border border-slate-300 bg-white px-4 py-3 outline-none focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
-              />
-            </div>
+          <Field label="Password" htmlFor="admin-password" required>
+            <Input
+              id="admin-password"
+              type="password"
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+              required
+              autoComplete="current-password"
+            />
+          </Field>
 
-            <div>
-              <label
-                htmlFor="admin-password"
-                className="block text-sm font-medium text-slate-700"
-              >
-                Password
-              </label>
-
-              <input
-                id="admin-password"
-                type="password"
-                value={password}
-                onChange={(event) =>
-                  setPassword(event.target.value)
-                }
-                required
-                autoComplete="current-password"
-                className="mt-2 w-full rounded-xl border border-slate-300 bg-white px-4 py-3 outline-none focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
-              />
-            </div>
-
-            {error && (
-              <p
-                role="alert"
-                className="rounded-xl bg-red-50 p-4 text-sm text-red-700"
-              >
-                {error}
-              </p>
-            )}
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full rounded-xl bg-slate-900 px-4 py-3 font-semibold text-white hover:bg-slate-700 disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900 focus-visible:ring-offset-2"
+          {error && (
+            <p
+              role="alert"
+              className="rounded-control border border-error-border bg-error-bg p-4 text-sm font-medium text-error"
             >
-              {loading ? "Signing in..." : "Sign in"}
-            </button>
-          </form>
-        </div>
-      </div>
+              {error}
+            </p>
+          )}
+
+          <Button type="submit" disabled={loading} className="w-full">
+            {loading ? "Signing in..." : "Sign in"}
+          </Button>
+        </form>
+      </Card>
     </main>
   );
 }

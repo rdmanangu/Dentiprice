@@ -4,6 +4,7 @@ import {
   createProcedure,
   updateProcedure,
 } from "../../services/procedures";
+import { Button, Card, Field, Input, Textarea } from "../ui";
 import { ErrorAlert } from "./primitives";
 
 type ProcedureFormProps = {
@@ -37,9 +38,7 @@ function ProcedureForm({
     procedure ? String(procedure.base_price) : ""
   );
   const [duration, setDuration] = useState(
-    procedure
-      ? String(procedure.estimated_duration_mins)
-      : ""
+    procedure ? String(procedure.estimated_duration_mins) : ""
   );
   const [imageUrl, setImageUrl] = useState(
     procedure?.image_url ?? ""
@@ -78,10 +77,7 @@ function ProcedureForm({
       return;
     }
 
-    if (
-      !Number.isFinite(durationMins) ||
-      durationMins <= 0
-    ) {
+    if (!Number.isFinite(durationMins) || durationMins <= 0) {
       setError("Enter a valid duration.");
       return;
     }
@@ -92,17 +88,14 @@ function ProcedureForm({
       let savedProcedure: Procedure;
 
       if (procedure) {
-        savedProcedure = await updateProcedure(
-          procedure.id,
-          {
-            name: name.trim(),
-            category: category.trim(),
-            description: description.trim(),
-            base_price: price,
-            estimated_duration_mins: durationMins,
-            image_url: imageUrl.trim() || null,
-          }
-        );
+        savedProcedure = await updateProcedure(procedure.id, {
+          name: name.trim(),
+          category: category.trim(),
+          description: description.trim(),
+          base_price: price,
+          estimated_duration_mins: durationMins,
+          image_url: imageUrl.trim() || null,
+        });
       } else {
         savedProcedure = await createProcedure({
           name: name.trim(),
@@ -130,9 +123,9 @@ function ProcedureForm({
   }
 
   return (
-    <div className="rounded-2xl bg-white p-6 shadow-sm">
+    <Card>
       <div className="mb-6">
-        <h3 className="text-xl font-bold text-slate-900">
+        <h3 className="text-xl font-bold text-ink">
           {procedure ? "Edit procedure" : "Add procedure"}
         </h3>
 
@@ -143,169 +136,95 @@ function ProcedureForm({
         </p>
       </div>
 
-      <form
-        onSubmit={handleSubmit}
-        className="space-y-5"
-      >
-        <div>
-          <label
-            htmlFor="procedure-name"
-            className="block text-sm font-medium text-slate-700"
-          >
-            Procedure name
-          </label>
-
-          <input
+      <form onSubmit={handleSubmit} className="space-y-5">
+        <Field label="Procedure name" htmlFor="procedure-name" required>
+          <Input
             id="procedure-name"
             type="text"
             value={name}
-            onChange={(event) =>
-              setName(event.target.value)
-            }
+            onChange={(event) => setName(event.target.value)}
             required
-            className="mt-2 w-full rounded-xl border border-slate-300 px-4 py-3"
             placeholder="Dental Cleaning"
           />
-        </div>
+        </Field>
 
-        <div>
-          <label
-            htmlFor="procedure-category"
-            className="block text-sm font-medium text-slate-700"
-          >
-            Category
-          </label>
-
-          <input
+        <Field label="Category" htmlFor="procedure-category" required>
+          <Input
             id="procedure-category"
             type="text"
             value={category}
-            onChange={(event) =>
-              setCategory(event.target.value)
-            }
+            onChange={(event) => setCategory(event.target.value)}
             required
-            className="mt-2 w-full rounded-xl border border-slate-300 px-4 py-3"
             placeholder="Preventive"
           />
-        </div>
+        </Field>
 
-        <div>
-          <label
-            htmlFor="procedure-description"
-            className="block text-sm font-medium text-slate-700"
-          >
-            Description
-          </label>
-
-          <textarea
+        <Field label="Description" htmlFor="procedure-description" required>
+          <Textarea
             id="procedure-description"
             value={description}
-            onChange={(event) =>
-              setDescription(event.target.value)
-            }
+            onChange={(event) => setDescription(event.target.value)}
             required
             rows={4}
-            className="mt-2 w-full rounded-xl border border-slate-300 px-4 py-3"
             placeholder="Describe the treatment..."
           />
-        </div>
+        </Field>
 
         <div className="grid gap-5 sm:grid-cols-2">
-          <div>
-            <label
-              htmlFor="procedure-price"
-              className="block text-sm font-medium text-slate-700"
-            >
-              Base price (₱)
-            </label>
-
-            <input
+          <Field label="Base price (₱)" htmlFor="procedure-price" required>
+            <Input
               id="procedure-price"
               type="number"
               min="0"
               step="0.01"
               value={basePrice}
-              onChange={(event) =>
-                setBasePrice(event.target.value)
-              }
+              onChange={(event) => setBasePrice(event.target.value)}
               required
-              className="mt-2 w-full rounded-xl border border-slate-300 px-4 py-3"
               placeholder="1500"
             />
-          </div>
+          </Field>
 
-          <div>
-            <label
-              htmlFor="procedure-duration"
-              className="block text-sm font-medium text-slate-700"
-            >
-              Duration (minutes)
-            </label>
-
-            <input
+          <Field label="Duration (minutes)" htmlFor="procedure-duration" required>
+            <Input
               id="procedure-duration"
               type="number"
               min="1"
               step="1"
               value={duration}
-              onChange={(event) =>
-                setDuration(event.target.value)
-              }
+              onChange={(event) => setDuration(event.target.value)}
               required
-              className="mt-2 w-full rounded-xl border border-slate-300 px-4 py-3"
               placeholder="60"
             />
-          </div>
+          </Field>
         </div>
 
-        <div>
-          <label
-            htmlFor="procedure-image"
-            className="block text-sm font-medium text-slate-700"
-          >
-            Image URL
-          </label>
-
-          <input
+        <Field label="Image URL" htmlFor="procedure-image">
+          <Input
             id="procedure-image"
             type="url"
             value={imageUrl}
-            onChange={(event) =>
-              setImageUrl(event.target.value)
-            }
-            className="mt-2 w-full rounded-xl border border-slate-300 px-4 py-3"
+            onChange={(event) => setImageUrl(event.target.value)}
             placeholder="https://..."
           />
-        </div>
+        </Field>
 
-        {error && (
-          <ErrorAlert>{error}</ErrorAlert>
-        )}
+        {error && <ErrorAlert>{error}</ErrorAlert>}
 
         <div className="flex gap-3">
-          <button
-            type="submit"
-            disabled={loading}
-            className="rounded-xl bg-slate-900 px-5 py-3 font-semibold text-white hover:bg-slate-700 disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900 focus-visible:ring-offset-2"
-          >
+          <Button type="submit" disabled={loading}>
             {loading
               ? "Saving..."
               : procedure
                 ? "Save changes"
                 : "Create procedure"}
-          </button>
+          </Button>
 
-          <button
-            type="button"
-            onClick={onCancel}
-            disabled={loading}
-            className="rounded-xl border border-slate-300 px-5 py-3 font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400"
-          >
+          <Button type="button" variant="secondary" onClick={onCancel} disabled={loading}>
             Cancel
-          </button>
+          </Button>
         </div>
       </form>
-    </div>
+    </Card>
   );
 }
 

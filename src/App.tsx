@@ -4,9 +4,12 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Header from "./components/layout/Header";
 import Home from "./pages/Home";
 import AdminRoute from "./components/auth/AdminRoute";
+import AdminLayout from "./components/admin/AdminLayout";
 
 const AdminLogin = lazy(() => import("./pages/AdminLogin"));
 const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
+const InquiriesPage = lazy(() => import("./pages/InquiriesPage"));
+const SchedulingPage = lazy(() => import("./pages/SchedulingPage"));
 
 function App() {
   return (
@@ -22,7 +25,7 @@ function App() {
         <Route
           path="/"
           element={
-            <div className="min-h-screen bg-slate-50">
+            <div className="min-h-screen bg-bg">
               <Header />
               <Home />
             </div>
@@ -38,10 +41,14 @@ function App() {
           path="/admin"
           element={
             <AdminRoute>
-              <AdminDashboard />
+              <AdminLayout />
             </AdminRoute>
           }
-        />
+        >
+          <Route index element={<AdminDashboard />} />
+          <Route path="inquiries" element={<InquiriesPage />} />
+          <Route path="scheduling" element={<SchedulingPage />} />
+        </Route>
       </Routes>
       </Suspense>
     </BrowserRouter>

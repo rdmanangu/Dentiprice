@@ -1,11 +1,80 @@
 @import "tailwindcss";
 
-:root {
-  font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
-    sans-serif;
+/* ═══════════════════════════════════════════════
+   DENTIPRICE DESIGN TOKENS
+   Single source of truth for the design system.
+   Every color, radius, and shadow used in the app
+   derives from these tokens.
+   ═══════════════════════════════════════════════ */
 
-  color: #172033;
-  background: #f8fafc;
+@theme {
+  /* ── Brand ramp (wine → pink) ──────────────── */
+  --color-primary: #5c1428;      /* primary brand / main buttons      */
+  --color-primary-hover: #8a1e3c; /* hover & active states             */
+  --color-accent: #b82850;       /* selected states / focus rings      */
+  --color-cta: #d64070;          /* patient-facing calls to action    */
+  --color-ink: #2e0a14;          /* darkest text                       */
+  --color-surface: #ffffff;      /* cards, panels, modals              */
+
+  /* ── Neutrals ───────────────────────────────── */
+  --color-bg: #f8fafc;           /* page background                    */
+  --color-border: #e2e8f0;       /* card / form / table borders        */
+
+  /* ── Semantic status colors (WCAG AA) ───────── */
+  --color-success: #15803d;      /* green: completed / success         */
+  --color-success-bg: #dcfce7;
+  --color-success-border: #86efac;
+
+  --color-warning: #b45309;      /* amber: pending / attention         */
+  --color-warning-bg: #fef3c7;
+  --color-warning-border: #fcd34d;
+
+  --color-error: #b91c1c;        /* true red: failure / destructive    */
+  --color-error-bg: #fee2e2;
+  --color-error-border: #fca5a5;
+
+  --color-info: #0369a1;         /* blue: informational                */
+  --color-info-bg: #e0f2fe;
+  --color-info-border: #7dd3fc;
+
+  /* ── Radius scale ───────────────────────────── */
+  --radius-card: 12px;
+  --radius-control: 8px;
+  --radius-pill: 9999px;
+
+  /* ── Shadow scale ───────────────────────────── */
+  --shadow-card: 0 1px 2px 0 rgba(46, 10, 20, 0.05);
+
+  /* ── Type scale ─────────────────────────────── */
+  --font-sans: Inter, system-ui, -apple-system, BlinkMacSystemFont,
+    "Segoe UI", sans-serif;
+}
+
+/* Expose the same tokens as plain CSS variables so they can be
+   referenced anywhere outside utility classes. */
+:root {
+  --color-primary: #5c1428;
+  --color-primary-hover: #8a1e3c;
+  --color-accent: #b82850;
+  --color-cta: #d64070;
+  --color-ink: #2e0a14;
+  --color-surface: #ffffff;
+  --color-bg: #f8fafc;
+  --color-border: #e2e8f0;
+  --color-success: #15803d;
+  --color-warning: #b45309;
+  --color-error: #b91c1c;
+  --color-info: #0369a1;
+
+  --radius-card: 12px;
+  --radius-control: 8px;
+  --radius-pill: 9999px;
+
+  --shadow-card: 0 1px 2px 0 rgba(46, 10, 20, 0.05);
+
+  font-family: var(--font-sans);
+  color: var(--color-ink);
+  background: var(--color-bg);
 }
 
 * {
@@ -19,10 +88,20 @@ html {
 body {
   margin: 0;
   min-width: 320px;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
 
 button,
 input,
-select {
+select,
+textarea {
   font: inherit;
+}
+
+/* Accessible default focus treatment. Individual interactive
+   elements may strengthen this with the accent ring tokens. */
+:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
 }

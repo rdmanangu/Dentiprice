@@ -1,3 +1,5 @@
+import { Button } from "../ui";
+import { formatPrice } from "../../lib/formatPrice";
 import type { Procedure } from "../../types/procedure";
 
 type ProcedureCardProps = {
@@ -10,7 +12,7 @@ function ProcedureCard({
   onSelect,
 }: ProcedureCardProps) {
   return (
-    <article className="flex h-full flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-md">
+    <article className="flex h-full flex-col overflow-hidden rounded-card border border-border bg-surface shadow-card transition hover:-translate-y-1 hover:shadow-md">
       {procedure.image_url ? (
         <img
           src={procedure.image_url}
@@ -19,19 +21,19 @@ function ProcedureCard({
         />
       ) : (
         <div
-          className="flex h-48 items-center justify-center bg-slate-100 text-sm text-slate-400"
+          className="flex h-48 items-center justify-center bg-gradient-to-br from-primary to-cta text-sm text-white/80"
           aria-hidden="true"
         >
-          Dental treatment
+          DentiPrice treatment
         </div>
       )}
 
       <div className="flex flex-1 flex-col p-5">
-        <span className="mb-2 text-sm font-medium text-slate-500">
+        <span className="mb-2 text-sm font-medium text-cta">
           {procedure.category}
         </span>
 
-        <h3 className="text-xl font-semibold text-slate-900">
+        <h3 className="text-xl font-semibold text-ink">
           {procedure.name}
         </h3>
 
@@ -43,8 +45,8 @@ function ProcedureCard({
           <div>
             <p className="text-xs text-slate-500">Starting at</p>
 
-            <p className="text-lg font-bold text-slate-900">
-              ₱{Number(procedure.base_price ?? 0).toLocaleString()}
+            <p className="text-xl font-bold text-primary">
+              {formatPrice(procedure.base_price)}
             </p>
           </div>
 
@@ -59,13 +61,14 @@ function ProcedureCard({
           </div>
         </div>
 
-        <button
+        <Button
           type="button"
+          variant="cta"
           onClick={() => onSelect?.(procedure)}
-          className="mt-5 w-full rounded-xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-slate-900 focus:ring-offset-2"
+          className="mt-5 w-full"
         >
           Select treatment
-        </button>
+        </Button>
       </div>
     </article>
   );

@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { getAddOnsForProcedure, type AddOn } from "../../services/addons";
+import { Button, Card, LoadingState } from "../ui";
+import { formatPrice } from "../../lib/formatPrice";
 import type { Procedure } from "../../types/procedure";
 
 type PriceEstimatorProps = {
@@ -22,16 +24,16 @@ function PriceEstimator({
   const [loadingAddOns, setLoadingAddOns] = useState(false);
   const [addOnError, setAddOnError] = useState<string | null>(null);
 
-useEffect(() => {
+  useEffect(() => {
     if (!procedure) {
-        return;
+      return;
     }
 
     const procedureId = procedure.id;
     let cancelled = false;
 
     async function loadAddOns() {
-        try {
+      try {
         setLoadingAddOns(true);
         setAddOnError(null);
         setSelectedAddOnIds([]);
@@ -41,23 +43,23 @@ useEffect(() => {
         if (!cancelled) {
           setAddOns(data);
         }
-        } catch (error) {
+      } catch (error) {
         console.error(error);
         if (!cancelled) {
           setAddOnError("Unable to load add-ons.");
         }
-        } finally {
+      } finally {
         if (!cancelled) {
           setLoadingAddOns(false);
         }
-        }
+      }
     }
 
     void loadAddOns();
     return () => {
       cancelled = true;
     };
-    }, [procedure]);
+  }, [procedure]);
 
   const selectedAddOns = useMemo(() => {
     return addOns.filter((addOn) =>
@@ -87,33 +89,25 @@ useEffect(() => {
 
   if (!procedure) {
     return (
-      <aside
-        aria-label="Price estimator"
-        className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm"
-      >
-        <h2 className="text-xl font-bold text-slate-900">
-          Price estimator
-        </h2>
+      <Card aria-label="Price estimator">
+        <h2 className="text-xl font-bold text-ink">Price estimator</h2>
 
         <p className="mt-2 text-sm text-slate-500">
           Select a treatment to calculate your estimated price.
         </p>
-      </aside>
+      </Card>
     );
   }
 
   return (
-    <aside
-      aria-label="Price estimator"
-      className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm"
-    >
+    <Card aria-label="Price estimator">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <p className="text-sm text-slate-500">
+          <p className="text-sm font-medium text-cta">
             Selected treatment
           </p>
 
-          <h2 className="mt-1 text-xl font-bold text-slate-900">
+          <h2 className="mt-1 text-xl font-bold text-ink">
             {procedure.name}
           </h2>
         </div>
@@ -121,48 +115,35 @@ useEffect(() => {
         <button
           type="button"
           onClick={onClear}
-          className="rounded-lg text-sm font-medium text-slate-500 hover:text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400"
+          className="rounded-lg text-sm font-medium text-slate-500 hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
         >
           Clear
         </button>
       </div>
 
-      <div className="mt-6 flex items-center justify-between border-t border-slate-100 pt-5">
-        <span className="text-slate-600">
-          Base price
-        </span>
+      <div className="mt-6 flex items-center justify-between border-t border-border pt-5">
+        <span className="text-slate-600">Base price</span>
 
-        <span className="text-xl font-bold text-slate-900">
-          ₱{Number(procedure.base_price).toLocaleString()}
+        <span className="text-xl font-bold text-primary">
+          {formatPrice(procedure.base_price)}
         </span>
       </div>
 
       <div className="mt-2 flex items-center justify-between">
-        <span className="text-sm text-slate-500">
-          Estimated duration
-        </span>
+        <span className="text-sm text-slate-500">Estimated duration</span>
 
         <span className="text-sm font-medium text-slate-700">
           {procedure.estimated_duration_mins} min
         </span>
       </div>
 
-      <div className="mt-6 border-t border-slate-100 pt-5">
-        <h3 className="font-semibold text-slate-900">
-          Optional add-ons
-        </h3>
+      <div className="mt-6 border-t border-border pt-5">
+        <h3 className="font-semibold text-ink">Optional add-ons</h3>
 
-        {loadingAddOns && (
-          <p className="mt-3 text-sm text-slate-500">
-            Loading add-ons...
-          </p>
-        )}
+        {loadingAddOns && <LoadingState className="mt-3" label="Loading add-ons..." />}
 
         {addOnError && (
-          <p
-            role="alert"
-            className="mt-3 text-sm text-red-600"
-          >
+          <p role="alert" className="mt-3 text-sm font-medium text-error">
             {addOnError}
           </p>
         )}
@@ -179,63 +160,51 @@ useEffect(() => {
           {addOns.map((addOn) => (
             <label
               key={addOn.id}
-              className="flex cursor-pointer items-center justify-between gap-4 rounded-xl border border-slate-200 p-4 hover:bg-slate-50"
+              className="flex cursor-pointer items-center justify-between gap-4 rounded-control border border-border p-4 hover:bg-bg"
             >
               <div className="flex items-center gap-3">
                 <input
                   type="checkbox"
                   checked={selectedAddOnIds.includes(addOn.id)}
                   onChange={() => toggleAddOn(addOn.id)}
-                  className="h-4 w-4 accent-slate-900"
+                  className="h-4 w-4 accent-cta"
                 />
 
-                <span className="font-medium text-slate-800">
-                  {addOn.name}
-                </span>
+                <span className="font-medium text-ink">{addOn.name}</span>
               </div>
 
-              <span className="font-semibold text-slate-900">
-                +₱{Number(addOn.price).toLocaleString()}
+              <span className="font-semibold text-slate-700">
+                +{formatPrice(addOn.price)}
               </span>
             </label>
           ))}
         </div>
       </div>
 
-      <div className="mt-6 rounded-xl bg-slate-900 p-5 text-white">
+      <div className="mt-6 rounded-card bg-gradient-to-br from-primary to-primary-hover p-5 text-white">
         <div className="flex items-center justify-between text-sm">
-          <span className="text-slate-300">
-            Base price
-          </span>
-
-          <span>
-            ₱{Number(procedure.base_price).toLocaleString()}
-          </span>
+          <span className="text-white/70">Base price</span>
+          <span className="font-medium">{formatPrice(procedure.base_price)}</span>
         </div>
 
         <div className="mt-2 flex items-center justify-between text-sm">
-          <span className="text-slate-300">
-            Add-ons
-          </span>
-
-          <span>
-            +₱{addOnsTotal.toLocaleString()}
+          <span className="text-white/70">Add-ons</span>
+          <span className="font-medium">
+            +{formatPrice(addOnsTotal)}
           </span>
         </div>
 
-        <div className="mt-4 border-t border-slate-700 pt-4">
-          <p className="text-sm text-slate-300">
-            Estimated total
-          </p>
-
-          <p className="mt-1 text-3xl font-bold">
-            ₱{totalPrice.toLocaleString()}
+        <div className="mt-4 border-t border-white/20 pt-4">
+          <p className="text-sm text-white/70">Estimated total</p>
+          <p className="mt-1 text-3xl font-bold text-white">
+            {formatPrice(totalPrice)}
           </p>
         </div>
       </div>
 
-      <button
+      <Button
         type="button"
+        variant="cta"
         onClick={() =>
           onRequestConsultation(
             procedure,
@@ -243,11 +212,11 @@ useEffect(() => {
             totalPrice
           )
         }
-        className="mt-5 w-full rounded-xl bg-slate-900 px-4 py-3 font-semibold text-white hover:bg-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900 focus-visible:ring-offset-2"
+        className="mt-5 w-full"
       >
         Request consultation
-      </button>
-    </aside>
+      </Button>
+    </Card>
   );
 }
 

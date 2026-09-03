@@ -1,4 +1,5 @@
 import ProcedureCard from "./ProcedureCard";
+import { EmptyState } from "../ui";
 import type { Procedure } from "../../types/procedure";
 
 type ProcedureGridProps = {
@@ -12,9 +13,10 @@ function ProcedureGrid({
 }: ProcedureGridProps) {
   if (procedures.length === 0) {
     return (
-      <p className="py-12 text-center text-slate-500">
-        No treatments found.
-      </p>
+      <EmptyState
+        title="No treatments found."
+        description="Try adjusting your search or filters."
+      />
     );
   }
 

@@ -4,6 +4,7 @@ import type {
   InquiryStatus,
   CreateInquiryInput,
 } from "../types/inquiry";
+import type { ConfirmScheduleResult } from "../types/appointment";
 
 // ─────────────────────────────────────────────
 // INQUIRY ITEM TYPE
@@ -37,6 +38,7 @@ export async function createInquiry(
     totalPrice,
     preferredDate,
     preferredTimeSlot,
+    patientId,
   } = input;
 
   // Build the inquiry_items payload.
@@ -69,6 +71,7 @@ export async function createInquiry(
       p_preferred_date: preferredDate,
       p_preferred_time_slot: preferredTimeSlot,
       p_items: items,
+      ...(patientId ? { p_patient_id: patientId } : {}),
     }
   );
 
@@ -106,6 +109,29 @@ export async function getInquiries(): Promise<Inquiry[]> {
   }
 
   return data ?? [];
+}
+
+// ─────────────────────────────────────────────
+// GET INQUIRY BY ID
+// Used by appointment details to show the
+// originating inquiry for an appointment.
+// ─────────────────────────────────────────────
+
+export async function getInquiryById(
+  id: string
+): Promise<Inquiry | null> {
+  const { data, error } = await supabase
+    .from("inquiries")
+    .select("*")
+    .eq("id", id)
+    .maybeSingle();
+
+  if (error) {
+    console.error("Get inquiry by ID error:", error);
+    throw error;
+  }
+
+  return data as Inquiry | null;
 }
 
 // ─────────────────────────────────────────────
@@ -209,4 +235,41 @@ export async function deleteInquiry(
       "The inquiry was not deleted. Your account may not have permission."
     );
   }
+}
+
+// ─────────────────────────────────────────────
+// CONFIRM INQUIRY & SCHEDULE APPOINTMENT
+// Atomic server-side operation: locks the
+// inquiry, creates the appointment + items,
+// and marks the inquiry as confirmed.
+// ─────────────────────────────────────────────
+
+export async function confirmInquiryAndSchedule(
+  inquiryId: string,
+  appointmentDate: string,
+  appointmentStart: string,
+  appointmentEnd: string,
+  notes?: string
+): Promise<ConfirmScheduleResult> {
+  const { data, error } = await supabase.rpc(
+    "confirm_inquiry_and_schedule",
+    {
+      p_inquiry_id: inquiryId,
+      p_appointment_date: appointmentDate,
+      p_appointment_start: appointmentStart,
+      p_appointment_end: appointmentEnd,
+      ...(notes ? { p_notes: notes } : {}),
+    }
+  );
+
+  if (error) {
+    console.error(
+      "RPC confirm_inquiry_and_schedule error:",
+      error
+    );
+
+    throw error;
+  }
+
+  return data as ConfirmScheduleResult;
 }

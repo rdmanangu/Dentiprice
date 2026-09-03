@@ -1,13 +1,21 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { supabase } from "../lib/supabase";
+import { useState, useEffect } from "react";
 import ProcedureManager from "../components/admin/ProcedureManager";
 import AddOnManager from "../components/admin/AddOnManager";
-import InquiryManager from "../components/admin/InquiryManager";
+import { Card, SectionHeader } from "../components/ui";
 import type { Inquiry, InquiryStatus } from "../types/inquiry";
+import { getInquiries } from "../services/inquiries";
+
+const statCards: {
+  label: string;
+  key: InquiryStatus | "total";
+}[] = [
+  { label: "Total inquiries", key: "total" },
+  { label: "Pending inquiries", key: "pending" },
+  { label: "Confirmed inquiries", key: "confirmed" },
+  { label: "Completed inquiries", key: "completed" },
+];
 
 function AdminDashboard() {
-  const navigate = useNavigate();
   const [inquiries, setInquiries] = useState<Inquiry[]>([]);
 
   const inquiryCounts: Record<InquiryStatus, number> = {
@@ -23,91 +31,60 @@ function AdminDashboard() {
     }
   });
 
-  async function handleLogout() {
-    await supabase.auth.signOut();
-    navigate("/admin/login");
-  }
+  const total = inquiries.length;
+
+  useEffect(() => {
+    let cancelled = false;
+
+    getInquiries()
+      .then((data) => {
+        if (!cancelled) {
+          setInquiries(data);
+        }
+      })
+      .catch((err) => {
+        console.error(err);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   return (
-    <main className="min-h-screen bg-slate-100">
-      <header className="border-b bg-white">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-5 sm:px-6 lg:px-8">
-          <div>
-            <h1 className="text-2xl font-bold text-slate-900">
-              Dentiprice Admin
-            </h1>
+    <div className="space-y-6">
+      <SectionHeader
+        title="Dashboard"
+        subtitle="Overview of your clinic's consultation requests."
+      />
 
-            <p className="text-sm text-slate-500">
-              Clinic management dashboard
-            </p>
-          </div>
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {statCards.map((stat) => {
+          const value =
+            stat.key === "total"
+              ? total
+              : inquiryCounts[stat.key as InquiryStatus];
 
-          <button
-            type="button"
-            onClick={handleLogout}
-            className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-medium hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400"
-          >
-            Sign out
-          </button>
-        </div>
-      </header>
+          return (
+            <Card key={stat.label} className="p-6">
+              <p className="text-sm font-medium text-slate-500">
+                {stat.label}
+              </p>
 
-      <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
-        <h2 className="text-xl font-semibold text-slate-900">
-          Dashboard
-        </h2>
+              <p className="mt-2 text-3xl font-bold text-ink">
+                {value}
+              </p>
+            </Card>
+          );
+        })}
+      </div>
 
-        <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <div className="rounded-2xl bg-white p-6 shadow-sm">
-            <p className="text-sm font-medium text-slate-500">
-              Total inquiries
-            </p>
+      <div className="space-y-6">
+        <ProcedureManager />
 
-            <p className="mt-2 text-3xl font-bold text-slate-900">
-              {inquiries.length}
-            </p>
-          </div>
-
-          <div className="rounded-2xl bg-white p-6 shadow-sm">
-            <p className="text-sm font-medium text-slate-500">
-              Pending inquiries
-            </p>
-
-            <p className="mt-2 text-3xl font-bold text-slate-900">
-              {inquiryCounts.pending}
-            </p>
-          </div>
-
-          <div className="rounded-2xl bg-white p-6 shadow-sm">
-            <p className="text-sm font-medium text-slate-500">
-              Confirmed inquiries
-            </p>
-
-            <p className="mt-2 text-3xl font-bold text-slate-900">
-              {inquiryCounts.confirmed}
-            </p>
-          </div>
-
-          <div className="rounded-2xl bg-white p-6 shadow-sm">
-            <p className="text-sm font-medium text-slate-500">
-              Completed inquiries
-            </p>
-
-            <p className="mt-2 text-3xl font-bold text-slate-900">
-              {inquiryCounts.completed}
-            </p>
-          </div>
-        </div>
-
-        <div className="mt-6 space-y-6">
-          <ProcedureManager />
-
-          <AddOnManager />
-
-          <InquiryManager onInquiriesChange={setInquiries} />
-        </div>
-      </section>
-    </main>
+        <AddOnManager />
+      </div>
+    </div>
   );
 }
 

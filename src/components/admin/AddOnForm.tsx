@@ -5,6 +5,7 @@ import {
   updateAddOn,
   type AddOn,
 } from "../../services/addons";
+import { Button, Card, Field, Input, Select } from "../ui";
 import { ErrorAlert } from "./primitives";
 
 type AddOnFormProps = {
@@ -71,10 +72,7 @@ function AddOnForm({
       return;
     }
 
-    if (
-      !Number.isFinite(parsedDuration) ||
-      parsedDuration <= 0
-    ) {
+    if (!Number.isFinite(parsedDuration) || parsedDuration <= 0) {
       setError("Enter a valid duration.");
       return;
     }
@@ -118,9 +116,9 @@ function AddOnForm({
   }
 
   return (
-    <div className="rounded-2xl bg-white p-6 shadow-sm">
+    <Card>
       <div className="mb-6">
-        <h3 className="text-xl font-bold text-slate-900">
+        <h3 className="text-xl font-bold text-ink">
           {addOn ? "Edit add-on" : "Add add-on"}
         </h3>
 
@@ -131,115 +129,67 @@ function AddOnForm({
         </p>
       </div>
 
-      <form
-        onSubmit={handleSubmit}
-        className="space-y-5"
-      >
-        <div>
-          <label
-            htmlFor="add-on-name"
-            className="block text-sm font-medium text-slate-700"
-          >
-            Add-on name
-          </label>
-
-          <input
+      <form onSubmit={handleSubmit} className="space-y-5">
+        <Field label="Add-on name" htmlFor="add-on-name" required>
+          <Input
             id="add-on-name"
             type="text"
             value={name}
-            onChange={(event) =>
-              setName(event.target.value)
-            }
+            onChange={(event) => setName(event.target.value)}
             required
-            className="mt-2 w-full rounded-xl border border-slate-300 px-4 py-3"
             placeholder="Teeth whitening boost"
           />
-        </div>
+        </Field>
 
-        <div>
-          <label
-            htmlFor="add-on-procedure"
-            className="block text-sm font-medium text-slate-700"
-          >
-            Procedure
-          </label>
-
-          <select
+        <Field label="Procedure" htmlFor="add-on-procedure" required>
+          <Select
             id="add-on-procedure"
             value={procedureId}
-            onChange={(event) =>
-              setProcedureId(event.target.value)
-            }
+            onChange={(event) => setProcedureId(event.target.value)}
             required
-            className="mt-2 w-full rounded-xl border border-slate-300 bg-white px-4 py-3"
           >
-            <option value="">
-              Select a procedure…
-            </option>
+            <option value="">Select a procedure…</option>
 
             {procedures.map((procedure) => (
-              <option
-                key={procedure.id}
-                value={procedure.id}
-              >
+              <option key={procedure.id} value={procedure.id}>
                 {procedure.name}
               </option>
             ))}
-          </select>
+          </Select>
 
           {procedures.length === 0 && (
-            <p className="mt-2 text-sm text-red-700">
+            <p className="mt-2 text-sm font-medium text-error">
               Create a procedure first — add-ons must be linked to one.
             </p>
           )}
-        </div>
+        </Field>
 
         <div className="grid gap-5 sm:grid-cols-2">
-          <div>
-            <label
-              htmlFor="add-on-price"
-              className="block text-sm font-medium text-slate-700"
-            >
-              Price (₱)
-            </label>
-
-            <input
+          <Field label="Price (₱)" htmlFor="add-on-price" required>
+            <Input
               id="add-on-price"
               type="number"
               min="0"
               step="0.01"
               value={price}
-              onChange={(event) =>
-                setPrice(event.target.value)
-              }
+              onChange={(event) => setPrice(event.target.value)}
               required
-              className="mt-2 w-full rounded-xl border border-slate-300 px-4 py-3"
               placeholder="500"
             />
-          </div>
+          </Field>
 
-          <div>
-            <label
-              htmlFor="add-on-duration"
-              className="block text-sm font-medium text-slate-700"
-            >
-              Duration (minutes)
-            </label>
-
-            <input
+          <Field label="Duration (minutes)" htmlFor="add-on-duration" required>
+            <Input
               id="add-on-duration"
               type="number"
               min="1"
               step="1"
               value={durationMins}
-              onChange={(event) =>
-                setDurationMins(event.target.value)
-              }
+              onChange={(event) => setDurationMins(event.target.value)}
               required
-              className="mt-2 w-full rounded-xl border border-slate-300 px-4 py-3"
               placeholder="15"
             />
-          </div>
+          </Field>
         </div>
 
         <div className="flex items-center gap-3">
@@ -247,10 +197,8 @@ function AddOnForm({
             id="add-on-active"
             type="checkbox"
             checked={isActive}
-            onChange={(event) =>
-              setIsActive(event.target.checked)
-            }
-            className="h-4 w-4 rounded border-slate-300"
+            onChange={(event) => setIsActive(event.target.checked)}
+            className="h-4 w-4 rounded border-border accent-primary"
           />
 
           <label
@@ -261,34 +209,28 @@ function AddOnForm({
           </label>
         </div>
 
-        {error && (
-          <ErrorAlert>{error}</ErrorAlert>
-        )}
+        {error && <ErrorAlert>{error}</ErrorAlert>}
 
         <div className="flex gap-3">
-          <button
-            type="submit"
-            disabled={loading || procedures.length === 0}
-            className="rounded-xl bg-slate-900 px-5 py-3 font-semibold text-white hover:bg-slate-700 disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900 focus-visible:ring-offset-2"
-          >
+          <Button type="submit" disabled={loading || procedures.length === 0}>
             {loading
               ? "Saving..."
               : addOn
                 ? "Save changes"
                 : "Create add-on"}
-          </button>
+          </Button>
 
-          <button
+          <Button
             type="button"
+            variant="secondary"
             onClick={onCancel}
             disabled={loading}
-            className="rounded-xl border border-slate-300 px-5 py-3 font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400"
           >
             Cancel
-          </button>
+          </Button>
         </div>
       </form>
-    </div>
+    </Card>
   );
 }
 

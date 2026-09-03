@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { createInquiry } from "../../services/inquiries";
+import { Button, Field, Input, Select } from "../ui";
+import { formatPrice } from "../../lib/formatPrice";
 import type { Procedure } from "../../types/procedure";
 
 type AddOn = {
@@ -71,26 +73,20 @@ function InquiryForm({
     try {
       setSubmitting(true);
 
-    await createInquiry({
-      patientName: patientName.trim(),
-      phone: phone.trim(),
-      email: email.trim(),
-      procedureId: procedure.id,
-      procedureName: procedure.name,
-      procedurePrice: procedure.base_price,
-      selectedAddOns,
-      totalPrice,
-      preferredDate,
-      preferredTimeSlot,
-    });
+      await createInquiry({
+        patientName: patientName.trim(),
+        phone: phone.trim(),
+        email: email.trim(),
+        procedureId: procedure.id,
+        procedureName: procedure.name,
+        procedurePrice: procedure.base_price,
+        selectedAddOns,
+        totalPrice,
+        preferredDate,
+        preferredTimeSlot,
+      });
 
       setSuccess(true);
-
-      setPatientName("");
-      setPhone("");
-      setEmail("");
-      setPreferredDate("");
-      setPreferredTimeSlot("");
     } catch (error) {
       console.error("INQUIRY SUBMISSION ERROR:", error);
 
@@ -123,229 +119,223 @@ function InquiryForm({
     }
   }
 
-  return (
-    <form
-      onSubmit={handleSubmit}
-      className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm"
-    >
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <h2
-            id="inquiry-form-title"
-            className="text-2xl font-bold text-slate-900"
-          >
-            Request a consultation
-          </h2>
+  // Confirmation / success state
+  if (success) {
+    return (
+      <div className="rounded-card border border-success-border bg-success-bg p-6 text-center">
+        <p className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-success text-2xl font-bold text-white" aria-hidden="true">
+          ✓
+        </p>
 
-          <p className="mt-1 text-sm text-slate-500">
-            Send your preferred appointment details to the clinic.
-          </p>
+        <h2 className="mt-4 text-2xl font-bold text-success">
+          Request submitted!
+        </h2>
+
+        <p className="mt-2 text-sm text-slate-700">
+          Thank you, {patientName.trim() || "there"}! Your consultation
+          request has been received by our clinic.
+        </p>
+
+        <div className="mx-auto mt-5 max-w-sm rounded-control border border-success-border bg-surface p-5 text-left">
+          <p className="text-sm font-medium text-cta">Selected treatment</p>
+          <p className="mt-1 font-semibold text-ink">{procedure.name}</p>
+
+          {selectedAddOns.length > 0 && (
+            <div className="mt-3">
+              <p className="text-sm text-slate-500">Add-ons</p>
+              <ul className="mt-1 space-y-1 text-sm text-slate-700">
+                {selectedAddOns.map((addOn) => (
+                  <li key={addOn.id} className="flex justify-between gap-3">
+                    <span>{addOn.name}</span>
+                    <span className="font-medium">{formatPrice(addOn.price)}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          <div className="mt-4 border-t border-border pt-4">
+            <div className="flex items-center justify-between">
+              <span className="font-semibold text-ink">Estimated total</span>
+              <span className="text-2xl font-bold text-success">
+                {formatPrice(totalPrice)}
+              </span>
+            </div>
+          </div>
         </div>
 
-        <button
+        <div className="mx-auto mt-4 max-w-sm rounded-control border border-border bg-surface p-4 text-left text-sm">
+          <div className="flex justify-between gap-3">
+            <span className="text-slate-500">Preferred date</span>
+            <span className="font-medium capitalize text-ink">
+              {preferredDate || "—"}
+            </span>
+          </div>
+          <div className="mt-2 flex justify-between gap-3">
+            <span className="text-slate-500">Preferred time</span>
+            <span className="font-medium capitalize text-ink">
+              {preferredTimeSlot || "—"}
+            </span>
+          </div>
+        </div>
+
+        <p className="mt-5 text-sm text-slate-700">
+          Our clinic will contact you to confirm your appointment.
+          Please keep your phone and email handy.
+        </p>
+
+        <Button
           type="button"
+          variant="secondary"
           onClick={onCancel}
-          className="text-sm text-slate-500 hover:text-slate-900"
+          className="mt-6"
         >
-          Cancel
-        </button>
+          Close
+        </Button>
       </div>
+    );
+  }
 
-      <div className="mt-6 rounded-xl bg-slate-50 p-4">
-        <p className="text-sm text-slate-500">
-          Selected treatment
-        </p>
+  return (
+    <div>
+      {/* Selected treatment summary */}
+      <div className="rounded-control border border-border bg-bg p-4">
+        <p className="text-sm font-medium text-cta">Selected treatment</p>
 
-        <p className="mt-1 font-semibold text-slate-900">
-          {procedure.name}
-        </p>
+        <p className="mt-1 font-semibold text-ink">{procedure.name}</p>
 
         {selectedAddOns.length > 0 && (
           <div className="mt-3">
-            <p className="text-sm text-slate-500">
-              Add-ons
-            </p>
+            <p className="text-sm text-slate-500">Add-ons</p>
 
-            <ul className="mt-1 text-sm text-slate-700">
+            <ul className="mt-1 space-y-1 text-sm text-slate-700">
               {selectedAddOns.map((addOn) => (
-                <li key={addOn.id}>
-                  {addOn.name} — ₱
-                  {Number(addOn.price).toLocaleString()}
+                <li key={addOn.id} className="flex justify-between gap-3">
+                  <span>{addOn.name}</span>
+                  <span className="font-medium">
+                    {formatPrice(addOn.price)}
+                  </span>
                 </li>
               ))}
             </ul>
           </div>
         )}
 
-        <div className="mt-4 border-t border-slate-200 pt-4">
-          <div className="flex justify-between">
-            <span className="font-medium text-slate-700">
-              Estimated total
-            </span>
+        <div className="mt-4 border-t border-border pt-4">
+          <div className="flex items-center justify-between">
+            <span className="font-semibold text-ink">Estimated total</span>
 
-            <span className="font-bold text-slate-900">
-              ₱{Number(totalPrice).toLocaleString()}
+            <span className="text-xl font-bold text-primary">
+              {formatPrice(totalPrice)}
             </span>
           </div>
         </div>
       </div>
 
-      <div className="mt-6 space-y-5">
-        <div>
-          <label
-            htmlFor="patient-name"
-            className="block text-sm font-medium text-slate-700"
-          >
-            Patient name
-          </label>
-
-          <input
+      <form onSubmit={handleSubmit} className="mt-6 space-y-5">
+        <Field
+          label="Patient name"
+          htmlFor="patient-name"
+          required
+          error={error && !patientName.trim() ? "Please enter your name." : null}
+        >
+          <Input
             id="patient-name"
             type="text"
             value={patientName}
-            onChange={(event) =>
-              setPatientName(event.target.value)
-            }
+            onChange={(event) => setPatientName(event.target.value)}
             required
             autoComplete="name"
-            className="mt-2 w-full rounded-xl border border-slate-300 bg-white px-4 py-3 outline-none focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
           />
-        </div>
+        </Field>
 
-        <div>
-          <label
-            htmlFor="phone"
-            className="block text-sm font-medium text-slate-700"
-          >
-            Phone
-          </label>
-
-          <input
+        <Field
+          label="Phone"
+          htmlFor="phone"
+          required
+          error={error && !phone.trim() ? "Please enter your phone number." : null}
+        >
+          <Input
             id="phone"
             type="tel"
             value={phone}
-            onChange={(event) =>
-              setPhone(event.target.value)
-            }
+            onChange={(event) => setPhone(event.target.value)}
             required
             autoComplete="tel"
-            className="mt-2 w-full rounded-xl border border-slate-300 bg-white px-4 py-3 outline-none focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
           />
-        </div>
+        </Field>
 
-        <div>
-          <label
-            htmlFor="email"
-            className="block text-sm font-medium text-slate-700"
-          >
-            Email
-          </label>
-
-          <input
+        <Field
+          label="Email"
+          htmlFor="email"
+          required
+          error={error && !email.trim() ? "Please enter your email." : null}
+        >
+          <Input
             id="email"
             type="email"
             value={email}
-            onChange={(event) =>
-              setEmail(event.target.value)
-            }
+            onChange={(event) => setEmail(event.target.value)}
             required
             autoComplete="email"
-            className="mt-2 w-full rounded-xl border border-slate-300 bg-white px-4 py-3 outline-none focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
           />
-        </div>
+        </Field>
 
         <div className="grid gap-5 sm:grid-cols-2">
-          <div>
-            <label
-              htmlFor="preferred-date"
-              className="block text-sm font-medium text-slate-700"
-            >
-              Preferred date
-            </label>
-
-            <input
+          <Field
+            label="Preferred date"
+            htmlFor="preferred-date"
+            required
+            error={error && !preferredDate ? "Please select a preferred date." : null}
+          >
+            <Input
               id="preferred-date"
               type="date"
               value={preferredDate}
-              onChange={(event) =>
-                setPreferredDate(event.target.value)
-              }
+              onChange={(event) => setPreferredDate(event.target.value)}
               required
-              className="mt-2 w-full rounded-xl border border-slate-300 bg-white px-4 py-3 outline-none focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
             />
-          </div>
+          </Field>
 
-          <div>
-            <label
-              htmlFor="preferred-time"
-              className="block text-sm font-medium text-slate-700"
-            >
-              Preferred time
-            </label>
-
-            <select
+          <Field
+            label="Preferred time"
+            htmlFor="preferred-time"
+            required
+            error={error && !preferredTimeSlot ? "Please select a preferred time." : null}
+          >
+            <Select
               id="preferred-time"
               value={preferredTimeSlot}
-              onChange={(event) =>
-                setPreferredTimeSlot(event.target.value)
-              }
+              onChange={(event) => setPreferredTimeSlot(event.target.value)}
               required
-              className="mt-2 w-full rounded-xl border border-slate-300 bg-white px-4 py-3 outline-none focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
             >
-              <option value="">
-                Select a time
-              </option>
-              <option value="morning">
-                Morning
-              </option>
-              <option value="afternoon">
-                Afternoon
-              </option>
-              <option value="evening">
-                Evening
-              </option>
-            </select>
-          </div>
+              <option value="">Select a time</option>
+              <option value="morning">Morning</option>
+              <option value="afternoon">Afternoon</option>
+              <option value="evening">Evening</option>
+            </Select>
+          </Field>
         </div>
-      </div>
 
-      {error && (
-        <p
-          role="alert"
-          className="mt-5 rounded-xl bg-red-50 p-4 text-sm text-red-700"
-        >
-          {error}
-        </p>
-      )}
-
-      {success && (
-        <div
-          role="status"
-          className="mt-5 rounded-xl border border-green-200 bg-green-50 p-4 text-green-700"
-        >
-          <p className="font-semibold">
-            Consultation request submitted successfully.
+        {error && (
+          <p
+            role="alert"
+            className="rounded-control border border-error-border bg-error-bg p-4 text-sm font-medium text-error"
+          >
+            {error}
           </p>
+        )}
 
-          <p className="mt-1 text-sm">
-            Our clinic will contact you to confirm your
-            appointment.
-          </p>
-        </div>
-      )}
-
-      <button
-        type="submit"
-        disabled={submitting || success}
-        className="mt-6 w-full rounded-xl bg-slate-900 px-4 py-3 font-semibold text-white hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-50"
-      >
-        {submitting
-          ? "Submitting..."
-          : success
-            ? "Request submitted"
-            : "Submit request"}
-      </button>
-    </form>
+        <Button
+          type="submit"
+          variant="cta"
+          disabled={submitting}
+          className="w-full"
+        >
+          {submitting ? "Submitting..." : "Submit request"}
+        </Button>
+      </form>
+    </div>
   );
 }
 

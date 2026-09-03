@@ -2,6 +2,7 @@ export type InquiryStatus = 'pending' | 'confirmed' | 'cancelled' | 'completed';
 
 export interface Inquiry {
   id: string;
+  patient_id: string | null;
   patient_name: string;
   phone: string;
   email: string;
@@ -30,5 +31,6 @@ export type CreateInquiryInput = {
   totalPrice: number;
   preferredDate: string;
   preferredTimeSlot: string;
+  patientId?: string | null;
 };
 

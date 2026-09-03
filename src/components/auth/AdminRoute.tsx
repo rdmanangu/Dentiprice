@@ -33,8 +33,8 @@ function AdminRoute({ children }: AdminRouteProps) {
 
   if (loading) {
     return (
-      <main className="flex min-h-screen items-center justify-center">
-        <p className="text-slate-500">
+      <main className="flex min-h-screen items-center justify-center bg-bg">
+        <p className="text-sm text-slate-500" role="status">
           Checking authentication...
         </p>
       </main>
