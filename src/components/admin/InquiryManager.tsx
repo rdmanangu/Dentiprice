@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import type {
   Inquiry,
   InquiryStatus,
@@ -11,6 +12,10 @@ import {
 import InquiryDetails from "./InquiryDetails";
 import { ConfirmDialog, DataTable, SectionHeader } from "../ui";
 import { formatPrice } from "../../lib/formatPrice";
+import {
+  ALLOWED_INQUIRY_TRANSITIONS,
+  canTransitionInquiry,
+} from "../../lib/workflow";
 
 type InquiryFilter = "all" | InquiryStatus;
 
@@ -51,12 +56,22 @@ type InquiryManagerProps = {
 function InquiryManager({
   onInquiriesChange,
 }: InquiryManagerProps) {
+  const [searchParams] = useSearchParams();
+  const requestedFilter = searchParams.get("filter");
+
   const [inquiries, setInquiries] = useState<Inquiry[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedInquiry, setSelectedInquiry] = useState<Inquiry | null>(null);
   const [activeFilter, setActiveFilter] =
-    useState<InquiryFilter>("all");
+    useState<InquiryFilter>(
+      requestedFilter === "pending" ||
+        requestedFilter === "confirmed" ||
+        requestedFilter === "cancelled" ||
+        requestedFilter === "completed"
+        ? (requestedFilter as InquiryStatus)
+        : "all"
+    );
   const [pendingDelete, setPendingDelete] = useState<Inquiry | null>(null);
   const [deleting, setDeleting] = useState(false);
 
@@ -102,16 +117,46 @@ function InquiryManager({
   ) {
     try {
       setError(null);
+
+      const current = inquiries.find((inquiry) => inquiry.id === id);
+
+      if (!current) {
+        return;
+      }
+
+      if (!canTransitionInquiry(current.status, status)) {
+        setError(
+          `This inquiry cannot be changed from ${current.status} to ${status}.`
+        );
+        return;
+      }
+
       const updated = await updateInquiryStatus(id, status);
 
-      setInquiries((current) =>
-        current.map((inquiry) =>
+      setInquiries((currentList) =>
+        currentList.map((inquiry) =>
           inquiry.id === updated.id ? updated : inquiry
         )
       );
     } catch (err) {
       console.error(err);
-      setError("Unable to update inquiry status.");
+
+      let message = "Unable to update inquiry status.";
+
+      if (err instanceof Error) {
+        const msg = err.message.toLowerCase();
+
+        if (msg.includes("already") && msg.includes("cannot be changed")) {
+          message =
+            "This inquiry has already reached a final status and cannot be changed.";
+        } else if (msg.includes("invalid inquiry status transition")) {
+          message = `This inquiry cannot be changed from the current status to ${status}.`;
+        } else if (msg.includes("permission denied")) {
+          message = "Permission denied. Your account cannot change this inquiry.";
+        }
+      }
+
+      setError(message);
     }
   }
 
@@ -246,25 +291,40 @@ function InquiryManager({
           {
             key: "status",
             header: "Status",
-            render: (inquiry) => (
-              <select
-                value={inquiry.status}
-                onChange={(event) => {
-                  const status = event.target.value;
+            render: (inquiry) => {
+              const terminal =
+                inquiry.status === "cancelled" ||
+                inquiry.status === "completed";
+              const allowed = ALLOWED_INQUIRY_TRANSITIONS[inquiry.status];
 
-                  if (isInquiryStatus(status)) {
-                    handleStatusChange(inquiry.id, status);
-                  }
-                }}
-                aria-label={`Change status for inquiry from ${inquiry.patient_name}`}
-                className={`rounded-control px-3 py-2 text-sm font-medium capitalize focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${inquiryStatusControlClasses[inquiry.status]}`}
-              >
-                <option value="pending">Pending</option>
-                <option value="confirmed">Confirmed</option>
-                <option value="completed">Completed</option>
-                <option value="cancelled">Cancelled</option>
-              </select>
-            ),
+              if (terminal) {
+                return <span className="text-sm capitalize text-slate-400">{inquiry.status} (final)</span>;
+              }
+
+              return (
+                <select
+                  value={inquiry.status}
+                  onChange={(event) => {
+                    const status = event.target.value;
+
+                    if (isInquiryStatus(status)) {
+                      handleStatusChange(inquiry.id, status);
+                    }
+                  }}
+                  aria-label={`Change status for inquiry from ${inquiry.patient_name}`}
+                  className={`rounded-control px-3 py-2 text-sm font-medium capitalize focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${inquiryStatusControlClasses[inquiry.status]}`}
+                >
+                  <option value={inquiry.status}>
+                    {inquiry.status.charAt(0).toUpperCase() + inquiry.status.slice(1)}
+                  </option>
+                  {allowed.map((next) => (
+                    <option key={next} value={next}>
+                      {next.charAt(0).toUpperCase() + next.slice(1)}
+                    </option>
+                  ))}
+                </select>
+              );
+            },
           },
           {
             key: "actions",

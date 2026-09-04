@@ -5,7 +5,9 @@ import { Button, PageContainer } from "../ui";
 const navItems: { label: string; to: string; end?: boolean }[] = [
   { label: "Dashboard", to: "/admin", end: true },
   { label: "Inquiries", to: "/admin/inquiries" },
+  { label: "Patients", to: "/admin/patients" },
   { label: "Scheduling", to: "/admin/scheduling" },
+  { label: "Treatments & Add-ons", to: "/admin/treatments" },
 ];
 
 function AdminLayout() {

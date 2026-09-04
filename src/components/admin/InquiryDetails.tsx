@@ -3,16 +3,25 @@ import type {
   Inquiry,
   InquiryStatus,
 } from "../../types/inquiry";
+import type { AppointmentWithDetails } from "../../types/appointment";
 
 import {
+  getInquiryById,
   getInquiryItems,
   updateInquiryStatus,
   confirmInquiryAndSchedule,
   type InquiryItem,
 } from "../../services/inquiries";
+import { getAppointmentByInquiryId } from "../../services/appointments";
 import { Button, Field, Input, Modal, Select } from "../ui";
 import { formatPrice } from "../../lib/formatPrice";
+import {
+  ALLOWED_INQUIRY_TRANSITIONS,
+  canTransitionInquiry,
+} from "../../lib/workflow";
 import { InquiryStatusBadge } from "./primitives";
+import { AppointmentStatusBadge } from "./appointmentPrimitives";
+import AppointmentDetails from "./AppointmentDetails";
 
 type InquiryDetailsProps = {
   inquiry: Inquiry;
@@ -71,6 +80,14 @@ function InquiryDetails({
   const [scheduleError, setScheduleError] =
     useState<string | null>(null);
   const [scheduling, setScheduling] = useState(false);
+  const [confirmSuccess, setConfirmSuccess] =
+    useState(false);
+
+  // Related appointment (for confirmed inquiries)
+  const [relatedAppointment, setRelatedAppointment] =
+    useState<AppointmentWithDetails | null>(null);
+  const [selectedAppointmentId, setSelectedAppointmentId] =
+    useState<string | null>(null);
 
   // ─────────────────────────────────────────────
   // LOAD INQUIRY ITEMS
@@ -110,6 +127,30 @@ function InquiryDetails({
   }, [inquiry.id]);
 
   // ─────────────────────────────────────────────
+  // LOAD RELATED APPOINTMENT (for confirmed)
+  // ─────────────────────────────────────────────
+
+  useEffect(() => {
+    let cancelled = false;
+
+    if (inquiry.status === "confirmed" || inquiry.status === "completed") {
+      getAppointmentByInquiryId(inquiry.id)
+        .then((data) => {
+          if (!cancelled) {
+            setRelatedAppointment(data);
+          }
+        })
+        .catch(() => {
+          // Silent — related appointment is optional display
+        });
+    }
+
+    return () => {
+      cancelled = true;
+    };
+  }, [inquiry.id, inquiry.status]);
+
+  // ─────────────────────────────────────────────
   // UPDATE STATUS
   // ─────────────────────────────────────────────
 
@@ -117,6 +158,13 @@ function InquiryDetails({
     newStatus: InquiryStatus
   ) {
     if (newStatus === status) {
+      return;
+    }
+
+    if (!canTransitionInquiry(status, newStatus)) {
+      setStatusError(
+        `This inquiry cannot be changed from ${status} to ${newStatus}.`
+      );
       return;
     }
 
@@ -140,10 +188,23 @@ function InquiryDetails({
     } catch (err) {
       console.error("Unable to update inquiry status:", err);
 
-      setStatusError(
-        "Unable to update the inquiry status. Please try again."
-      );
+      let message =
+        "Unable to update the inquiry status. Please try again.";
 
+      if (err instanceof Error) {
+        const msg = err.message.toLowerCase();
+
+        if (msg.includes("already") && msg.includes("cannot be changed")) {
+          message =
+            "This inquiry has already reached a final status and cannot be changed.";
+        } else if (msg.includes("invalid inquiry status transition")) {
+          message = `This inquiry cannot be changed from ${status} to ${newStatus}.`;
+        } else if (msg.includes("row-level security") || msg.includes("permission denied")) {
+          message = "Permission denied. Your account cannot change this inquiry.";
+        }
+      }
+
+      setStatusError(message);
       setStatus(inquiry.status);
     } finally {
       setUpdatingStatus(false);
@@ -159,6 +220,22 @@ function InquiryDetails({
   ) {
     event.preventDefault();
     setScheduleError(null);
+    setConfirmSuccess(false);
+
+    // Frontend guard (UX only) — the database is the final authority.
+    if (status !== "pending") {
+      setScheduleError(
+        "This inquiry can no longer be scheduled because it is no longer pending."
+      );
+      return;
+    }
+
+    if (!inquiry.patient_id) {
+      setScheduleError(
+        "This inquiry cannot be scheduled because it is missing a patient record."
+      );
+      return;
+    }
 
     if (!scheduleDate) {
       setScheduleError("Please select an appointment date.");
@@ -190,10 +267,20 @@ function InquiryDetails({
         scheduleEnd
       );
 
+      // Refresh the local state so the confirm form is no longer shown and
+      // no stale "pending" state remains on screen.
+      setStatus(result.inquiry_status);
+      setConfirmSuccess(true);
       onStatusUpdated({
         ...inquiry,
         status: result.inquiry_status,
       });
+
+      // Load the newly created related appointment so the relationship is
+      // immediately visible without a manual refresh.
+      getAppointmentByInquiryId(inquiry.id)
+        .then((data) => setRelatedAppointment(data))
+        .catch(() => {});
     } catch (err) {
       console.error("Confirm & schedule error:", err);
 
@@ -205,16 +292,31 @@ function InquiryDetails({
 
         if (msg.includes("already confirmed") || msg.includes("status is")) {
           message =
-            "This inquiry has already been processed. Please refresh.";
+            "This inquiry has already been confirmed. The page will refresh to show the latest status.";
+          // Stale state: the inquiry was confirmed elsewhere. Re-fetch it.
+          getInquiryById(inquiry.id)
+            .then((data) => {
+              if (data) {
+                setStatus(data.status);
+                onStatusUpdated(data);
+              }
+            })
+            .catch(() => {});
         } else if (msg.includes("no linked patient")) {
           message =
-            "This inquiry has no linked patient. Patient resolution is required before scheduling.";
+            "This inquiry cannot be scheduled because it is missing a patient record.";
+        } else if (msg.includes("patient record not found")) {
+          message =
+            "This inquiry references a patient that no longer exists. Please contact support.";
         } else if (msg.includes("past")) {
           message =
             "Cannot schedule an appointment in the past. Please select a future date.";
         } else if (msg.includes("end time")) {
           message =
             "End time must be after start time. Please check your selection.";
+        } else if (msg.includes("already") && msg.includes("schedule")) {
+          message =
+            "This inquiry has already been scheduled. The page will refresh to show the latest status.";
         } else {
           message = err.message;
         }
@@ -282,6 +384,52 @@ function InquiryDetails({
             </div>
           </div>
         </section>
+
+        {/* RELATED APPOINTMENT */}
+        {relatedAppointment && (
+          <section className="rounded-card border border-accent/30 bg-accent/5 p-5">
+            <div className="flex items-center justify-between gap-4">
+              <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-500">
+                Scheduled appointment
+              </h3>
+
+              <AppointmentStatusBadge
+                status={relatedAppointment.status}
+              />
+            </div>
+
+            <div className="mt-3 grid gap-4 sm:grid-cols-2">
+              <div className="rounded-control border border-border bg-bg p-4">
+                <p className="text-xs text-slate-500">Date</p>
+                <p className="mt-1 font-medium text-ink">
+                  {relatedAppointment.appointment_date}
+                </p>
+              </div>
+
+              <div className="rounded-control border border-border bg-bg p-4">
+                <p className="text-xs text-slate-500">Time</p>
+                <p className="mt-1 font-medium text-ink">
+                  {relatedAppointment.appointment_start_time} –{" "}
+                  {relatedAppointment.appointment_end_time}
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-3">
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() =>
+                  setSelectedAppointmentId(
+                    relatedAppointment.id
+                  )
+                }
+              >
+                View appointment details
+              </Button>
+            </div>
+          </section>
+        )}
 
         {/* CONFIRM & SCHEDULE */}
         {status === "pending" && (
@@ -355,12 +503,29 @@ function InquiryDetails({
                 </p>
               )}
 
-              <Button type="submit" disabled={scheduling}>
+              <Button
+                type="submit"
+                disabled={scheduling}
+                className="w-full sm:w-auto"
+              >
                 {scheduling
                   ? "Scheduling..."
                   : "Confirm & schedule"}
               </Button>
             </form>
+          </section>
+        )}
+
+        {/* CONFIRM SUCCESS */}
+        {confirmSuccess && (
+          <section className="rounded-card border border-success-border bg-success-bg p-5">
+            <p className="text-sm font-semibold text-success">
+              Appointment scheduled successfully.
+            </p>
+            <p className="mt-1 text-sm text-slate-700">
+              This inquiry has been marked as confirmed and the appointment
+              has been created.
+            </p>
           </section>
         )}
 
@@ -444,24 +609,36 @@ function InquiryDetails({
             <InquiryStatusBadge status={status} />
           </div>
 
-          <Select
-            value={status}
-            disabled={updatingStatus}
-            onChange={(event) => {
-              const newStatus = event.target.value;
+          {status === "cancelled" || status === "completed" ? (
+            <p className="mt-2 text-sm text-slate-500">
+              This inquiry is{" "}
+              <span className="capitalize">{status}</span> and is final. It
+              cannot be changed.
+            </p>
+          ) : (
+            <Select
+              value={status}
+              disabled={updatingStatus}
+              onChange={(event) => {
+                const newStatus = event.target.value;
 
-              if (isInquiryStatus(newStatus)) {
-                handleStatusChange(newStatus);
-              }
-            }}
-            aria-label="Update inquiry status"
-            className={`mt-2 font-medium capitalize ${statusSelectClasses[status]}`}
-          >
-            <option value="pending">Pending</option>
-            <option value="confirmed">Confirmed</option>
-            <option value="cancelled">Cancelled</option>
-            <option value="completed">Completed</option>
-          </Select>
+                if (isInquiryStatus(newStatus)) {
+                  handleStatusChange(newStatus);
+                }
+              }}
+              aria-label="Update inquiry status"
+              className={`mt-2 font-medium capitalize ${statusSelectClasses[status]}`}
+            >
+              <option value={status}>
+                {status.charAt(0).toUpperCase() + status.slice(1)}
+              </option>
+              {ALLOWED_INQUIRY_TRANSITIONS[status].map((next) => (
+                <option key={next} value={next}>
+                  {next.charAt(0).toUpperCase() + next.slice(1)}
+                </option>
+              ))}
+            </Select>
+          )}
 
           {updatingStatus && (
             <p className="mt-2 text-sm text-slate-500" role="status">
@@ -504,6 +681,21 @@ function InquiryDetails({
           </div>
         </section>
       </div>
+
+      {selectedAppointmentId && (
+        <AppointmentDetails
+          appointmentId={selectedAppointmentId}
+          onClose={() => setSelectedAppointmentId(null)}
+          onStatusUpdated={() => {}}
+          onAppointmentUpdated={() => {
+            if (inquiry.status === "confirmed" || inquiry.status === "completed") {
+              getAppointmentByInquiryId(inquiry.id)
+                .then((data) => setRelatedAppointment(data))
+                .catch(() => {});
+            }
+          }}
+        />
+      )}
     </Modal>
   );
 }

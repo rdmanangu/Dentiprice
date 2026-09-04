@@ -9,7 +9,9 @@ import AdminLayout from "./components/admin/AdminLayout";
 const AdminLogin = lazy(() => import("./pages/AdminLogin"));
 const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
 const InquiriesPage = lazy(() => import("./pages/InquiriesPage"));
+const PatientsPage = lazy(() => import("./pages/PatientsPage"));
 const SchedulingPage = lazy(() => import("./pages/SchedulingPage"));
+const TreatmentsPage = lazy(() => import("./pages/TreatmentsPage"));
 
 function App() {
   return (
@@ -47,7 +49,9 @@ function App() {
         >
           <Route index element={<AdminDashboard />} />
           <Route path="inquiries" element={<InquiriesPage />} />
+          <Route path="patients" element={<PatientsPage />} />
           <Route path="scheduling" element={<SchedulingPage />} />
+          <Route path="treatments" element={<TreatmentsPage />} />
         </Route>
       </Routes>
       </Suspense>
