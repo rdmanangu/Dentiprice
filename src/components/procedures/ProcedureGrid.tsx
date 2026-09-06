@@ -4,11 +4,13 @@ import type { Procedure } from "../../types/procedure";
 
 type ProcedureGridProps = {
   procedures: Procedure[];
+  selectedId?: string | null;
   onSelect?: (procedure: Procedure) => void;
 };
 
 function ProcedureGrid({
   procedures,
+  selectedId,
   onSelect,
 }: ProcedureGridProps) {
   if (procedures.length === 0) {
@@ -26,6 +28,7 @@ function ProcedureGrid({
         <ProcedureCard
           key={procedure.id}
           procedure={procedure}
+          selected={procedure.id === selectedId}
           onSelect={onSelect}
         />
       ))}

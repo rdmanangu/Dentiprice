@@ -14,7 +14,7 @@ function Header() {
         <nav aria-label="Main navigation">
           <a
             href="#procedures"
-            className="rounded-lg px-3 py-2 text-sm font-medium text-slate-600 hover:bg-bg hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+            className="rounded-lg px-4 py-2.5 text-sm font-medium text-slate-600 transition-colors hover:bg-bg hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
           >
             Treatments
           </a>

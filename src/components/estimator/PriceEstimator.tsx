@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { getAddOnsForProcedure, type AddOn } from "../../services/addons";
 import { Button, Card, LoadingState } from "../ui";
 import { formatPrice } from "../../lib/formatPrice";
@@ -24,6 +24,10 @@ function PriceEstimator({
   const [loadingAddOns, setLoadingAddOns] = useState(false);
   const [addOnError, setAddOnError] = useState<string | null>(null);
 
+  // Cache already-loaded add-ons so re-selecting a treatment does not
+  // issue another database request for the same procedure.
+  const addOnsCache = useRef(new Map<string, AddOn[]>());
+
   useEffect(() => {
     if (!procedure) {
       return;
@@ -33,12 +37,27 @@ function PriceEstimator({
     let cancelled = false;
 
     async function loadAddOns() {
-      try {
-        setLoadingAddOns(true);
-        setAddOnError(null);
-        setSelectedAddOnIds([]);
+      const cached = addOnsCache.current.get(procedureId);
 
+      setAddOnError(null);
+      setSelectedAddOnIds([]);
+
+      if (cached) {
+        if (!cancelled) {
+          setAddOns(cached);
+        }
+        setLoadingAddOns(false);
+        return;
+      }
+
+      setLoadingAddOns(true);
+      // Clear the previous treatment's add-ons so the new list never
+      // shows stale options while it is loading.
+      setAddOns([]);
+
+      try {
         const data = await getAddOnsForProcedure(procedureId);
+        addOnsCache.current.set(procedureId, data);
 
         if (!cancelled) {
           setAddOns(data);
@@ -112,13 +131,14 @@ function PriceEstimator({
           </h2>
         </div>
 
-        <button
+        <Button
           type="button"
+          variant="ghost"
           onClick={onClear}
-          className="rounded-lg text-sm font-medium text-slate-500 hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+          className="text-sm"
         >
-          Clear
-        </button>
+          Clear selection
+        </Button>
       </div>
 
       <div className="mt-6 flex items-center justify-between border-t border-border pt-5">
@@ -139,6 +159,9 @@ function PriceEstimator({
 
       <div className="mt-6 border-t border-border pt-5">
         <h3 className="font-semibold text-ink">Optional add-ons</h3>
+        <p className="mt-1 text-xs text-slate-500">
+          Optional. Add any items that apply to your treatment.
+        </p>
 
         {loadingAddOns && <LoadingState className="mt-3" label="Loading add-ons..." />}
 
@@ -196,7 +219,10 @@ function PriceEstimator({
 
         <div className="mt-4 border-t border-white/20 pt-4">
           <p className="text-sm text-white/70">Estimated total</p>
-          <p className="mt-1 text-3xl font-bold text-white">
+          <p
+            aria-live="polite"
+            className="mt-1 text-3xl font-bold text-white"
+          >
             {formatPrice(totalPrice)}
           </p>
         </div>
@@ -212,9 +238,10 @@ function PriceEstimator({
             totalPrice
           )
         }
+        disabled={loadingAddOns}
         className="mt-5 w-full"
       >
-        Request consultation
+        {loadingAddOns ? "Loading add-ons..." : "Request consultation"}
       </Button>
     </Card>
   );

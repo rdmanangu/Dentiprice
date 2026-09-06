@@ -4,15 +4,23 @@ import type { Procedure } from "../../types/procedure";
 
 type ProcedureCardProps = {
   procedure: Procedure;
+  selected?: boolean;
   onSelect?: (procedure: Procedure) => void;
 };
 
 function ProcedureCard({
   procedure,
+  selected = false,
   onSelect,
 }: ProcedureCardProps) {
   return (
-    <article className="flex h-full flex-col overflow-hidden rounded-card border border-border bg-surface shadow-card transition hover:-translate-y-1 hover:shadow-md">
+    <article
+      className={`flex h-full flex-col overflow-hidden rounded-card border bg-surface shadow-card transition hover:-translate-y-1 hover:shadow-md ${
+        selected
+          ? "border-accent ring-2 ring-accent/30"
+          : "border-border"
+      }`}
+    >
       {procedure.image_url ? (
         <img
           src={procedure.image_url}
@@ -29,9 +37,17 @@ function ProcedureCard({
       )}
 
       <div className="flex flex-1 flex-col p-5">
-        <span className="mb-2 text-sm font-medium text-cta">
-          {procedure.category}
-        </span>
+        <div className="mb-2 flex items-center justify-between gap-2">
+          <span className="text-sm font-medium text-cta">
+            {procedure.category}
+          </span>
+
+          {selected && (
+            <span className="inline-flex items-center gap-1 rounded-pill bg-accent/10 px-2.5 py-0.5 text-xs font-semibold text-accent">
+              ✓ Selected
+            </span>
+          )}
+        </div>
 
         <h3 className="text-xl font-semibold text-ink">
           {procedure.name}
@@ -65,9 +81,10 @@ function ProcedureCard({
           type="button"
           variant="cta"
           onClick={() => onSelect?.(procedure)}
+          disabled={selected}
           className="mt-5 w-full"
         >
-          Select treatment
+          {selected ? "Selected" : "Select treatment"}
         </Button>
       </div>
     </article>

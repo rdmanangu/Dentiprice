@@ -2,6 +2,7 @@ import { useState } from "react";
 import { createInquiry } from "../../services/inquiries";
 import { Button, Field, Input, Select } from "../ui";
 import { formatPrice } from "../../lib/formatPrice";
+import { formatDisplayDate, todayLocalString } from "../../lib/dates";
 import type { Procedure } from "../../types/procedure";
 
 type AddOn = {
@@ -15,13 +16,53 @@ type InquiryFormProps = {
   selectedAddOns?: AddOn[];
   totalPrice: number;
   onCancel: () => void;
+  onStartOver?: () => void;
 };
+
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+// Returns a short, human-readable label for a time-slot value.
+function timeSlotLabel(value: string): string {
+  if (!value) {
+    return "—";
+  }
+
+  return value.charAt(0).toUpperCase() + value.slice(1);
+}
+
+// Maps low-level submission failures to safe, user-facing messages.
+// Internal database error details are logged for developers but are
+// never shown directly to public users.
+function userMessageFor(error: unknown): string {
+  if (error instanceof Error) {
+    const msg = error.message.toLowerCase();
+
+    if (
+      msg.includes("permission denied") ||
+      msg.includes("403") ||
+      msg.includes("row-level security")
+    ) {
+      return "Permission denied. Please try again later.";
+    }
+
+    if (
+      msg.includes("network") ||
+      msg.includes("fetch") ||
+      msg.includes("failed to fetch")
+    ) {
+      return "Network error. Please check your internet connection and try again.";
+    }
+  }
+
+  return "Unable to submit your consultation request. Please try again.";
+}
 
 function InquiryForm({
   procedure,
   selectedAddOns = [],
   totalPrice,
   onCancel,
+  onStartOver,
 }: InquiryFormProps) {
   const [patientName, setPatientName] = useState("");
   const [phone, setPhone] = useState("");
@@ -30,8 +71,69 @@ function InquiryForm({
   const [preferredTimeSlot, setPreferredTimeSlot] = useState("");
 
   const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<{ [key: string]: string }>({});
   const [success, setSuccess] = useState(false);
+
+  const today = todayLocalString();
+
+  function clearFieldError(field: string) {
+    setFieldErrors((current) => {
+      if (!current[field]) {
+        return current;
+      }
+
+      const next = { ...current };
+      delete next[field];
+      return next;
+    });
+  }
+
+  function validate({
+    name,
+    phoneNumber,
+    emailAddress,
+    date,
+    timeSlot,
+  }: {
+    name: string;
+    phoneNumber: string;
+    emailAddress: string;
+    date: string;
+    timeSlot: string;
+  }): { [key: string]: string } {
+    const errors: { [key: string]: string } = {};
+
+    if (!name.trim()) {
+      errors.name = "Please enter your name.";
+    } else if (name.trim().length < 2) {
+      errors.name = "Your name must be at least 2 characters.";
+    }
+
+    if (!phoneNumber.trim()) {
+      errors.phone = "Please enter your phone number.";
+    } else if (phoneNumber.replace(/\D/g, "").length < 7) {
+      errors.phone = "Please enter a valid phone number.";
+    }
+
+    if (!emailAddress.trim()) {
+      errors.email = "Please enter your email.";
+    } else if (!EMAIL_PATTERN.test(emailAddress.trim())) {
+      errors.email = "Please enter a valid email address.";
+    }
+
+    if (!date) {
+      errors.date = "Please select a preferred date.";
+    } else if (date < today) {
+      errors.date = "The preferred date cannot be in the past.";
+    }
+
+    if (!timeSlot) {
+      errors.time = "Please select a preferred time.";
+    }
+
+    return errors;
+  }
 
   async function handleSubmit(
     event: React.FormEvent<HTMLFormElement>
@@ -42,31 +144,40 @@ function InquiryForm({
       return;
     }
 
-    setError(null);
-    setSuccess(false);
+    setSubmitError(null);
 
-    if (!patientName.trim()) {
-      setError("Please enter your name.");
-      return;
-    }
+    const errors = validate({
+      name: patientName,
+      phoneNumber: phone,
+      emailAddress: email,
+      date: preferredDate,
+      timeSlot: preferredTimeSlot,
+    });
 
-    if (!phone.trim()) {
-      setError("Please enter your phone number.");
-      return;
-    }
+    setFieldErrors(errors);
 
-    if (!email.trim()) {
-      setError("Please enter your email.");
-      return;
-    }
+    if (Object.keys(errors).length > 0) {
+      const focusOrder = [
+        "patient-name",
+        "phone",
+        "email",
+        "preferred-date",
+        "preferred-time",
+      ];
 
-    if (!preferredDate) {
-      setError("Please select a preferred date.");
-      return;
-    }
+      const firstInvalid = focusOrder.find((id) => {
+        const key = id.replace("patient-", "").replace("preferred-", "");
+        return Boolean(errors[key]);
+      });
 
-    if (!preferredTimeSlot) {
-      setError("Please select a preferred time.");
+      const target = document.getElementById(
+        firstInvalid ?? "patient-name"
+      );
+
+      if (target instanceof HTMLElement) {
+        target.focus();
+      }
+
       return;
     }
 
@@ -89,31 +200,7 @@ function InquiryForm({
       setSuccess(true);
     } catch (error) {
       console.error("INQUIRY SUBMISSION ERROR:", error);
-
-      let userMessage =
-        "Unable to submit your consultation request. Please try again.";
-
-      if (error instanceof Error) {
-        const msg = error.message.toLowerCase();
-
-        if (
-          msg.includes("permission denied") ||
-          msg.includes("403")
-        ) {
-          userMessage =
-            "Permission denied. Please try again later.";
-        } else if (
-          msg.includes("network") ||
-          msg.includes("fetch")
-        ) {
-          userMessage =
-            "Network error. Please check your internet connection.";
-        } else {
-          userMessage = error.message;
-        }
-      }
-
-      setError(userMessage);
+      setSubmitError(userMessageFor(error));
     } finally {
       setSubmitting(false);
     }
@@ -167,31 +254,43 @@ function InquiryForm({
         <div className="mx-auto mt-4 max-w-sm rounded-control border border-border bg-surface p-4 text-left text-sm">
           <div className="flex justify-between gap-3">
             <span className="text-slate-500">Preferred date</span>
-            <span className="font-medium capitalize text-ink">
-              {preferredDate || "—"}
+            <span className="font-medium text-ink">
+              {formatDisplayDate(preferredDate)}
             </span>
           </div>
           <div className="mt-2 flex justify-between gap-3">
             <span className="text-slate-500">Preferred time</span>
-            <span className="font-medium capitalize text-ink">
-              {preferredTimeSlot || "—"}
+            <span className="font-medium text-ink">
+              {timeSlotLabel(preferredTimeSlot)}
             </span>
           </div>
         </div>
 
         <p className="mt-5 text-sm text-slate-700">
-          Our clinic will contact you to confirm your appointment.
+          This is a consultation request, not a confirmed appointment.
+          Our clinic will contact you to confirm a final schedule.
           Please keep your phone and email handy.
         </p>
 
-        <Button
-          type="button"
-          variant="secondary"
-          onClick={onCancel}
-          className="mt-6"
-        >
-          Close
-        </Button>
+        <div className="mt-6 flex flex-wrap justify-center gap-3">
+          {onStartOver && (
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={onStartOver}
+            >
+              Start over
+            </Button>
+          )}
+
+          <Button
+            type="button"
+            variant="primary"
+            onClick={onCancel}
+          >
+            Close
+          </Button>
+        </div>
       </div>
     );
   }
@@ -232,19 +331,21 @@ function InquiryForm({
         </div>
       </div>
 
-      <form onSubmit={handleSubmit} className="mt-6 space-y-5">
+      <form onSubmit={handleSubmit} noValidate className="mt-6 space-y-5">
         <Field
-          label="Patient name"
+          label="Full name"
           htmlFor="patient-name"
           required
-          error={error && !patientName.trim() ? "Please enter your name." : null}
+          error={fieldErrors.name}
         >
           <Input
             id="patient-name"
             type="text"
             value={patientName}
-            onChange={(event) => setPatientName(event.target.value)}
-            required
+            onChange={(event) => {
+              setPatientName(event.target.value);
+              clearFieldError("name");
+            }}
             autoComplete="name"
           />
         </Field>
@@ -253,14 +354,16 @@ function InquiryForm({
           label="Phone"
           htmlFor="phone"
           required
-          error={error && !phone.trim() ? "Please enter your phone number." : null}
+          error={fieldErrors.phone}
         >
           <Input
             id="phone"
             type="tel"
             value={phone}
-            onChange={(event) => setPhone(event.target.value)}
-            required
+            onChange={(event) => {
+              setPhone(event.target.value);
+              clearFieldError("phone");
+            }}
             autoComplete="tel"
           />
         </Field>
@@ -269,14 +372,16 @@ function InquiryForm({
           label="Email"
           htmlFor="email"
           required
-          error={error && !email.trim() ? "Please enter your email." : null}
+          error={fieldErrors.email}
         >
           <Input
             id="email"
             type="email"
             value={email}
-            onChange={(event) => setEmail(event.target.value)}
-            required
+            onChange={(event) => {
+              setEmail(event.target.value);
+              clearFieldError("email");
+            }}
             autoComplete="email"
           />
         </Field>
@@ -286,14 +391,17 @@ function InquiryForm({
             label="Preferred date"
             htmlFor="preferred-date"
             required
-            error={error && !preferredDate ? "Please select a preferred date." : null}
+            error={fieldErrors.date}
           >
             <Input
               id="preferred-date"
               type="date"
               value={preferredDate}
-              onChange={(event) => setPreferredDate(event.target.value)}
-              required
+              min={today}
+              onChange={(event) => {
+                setPreferredDate(event.target.value);
+                clearFieldError("date");
+              }}
             />
           </Field>
 
@@ -301,13 +409,16 @@ function InquiryForm({
             label="Preferred time"
             htmlFor="preferred-time"
             required
-            error={error && !preferredTimeSlot ? "Please select a preferred time." : null}
+            hint="Morning (before 12:00 PM), Afternoon (12:00–5:00 PM), Evening (after 5:00 PM)"
+            error={fieldErrors.time}
           >
             <Select
               id="preferred-time"
               value={preferredTimeSlot}
-              onChange={(event) => setPreferredTimeSlot(event.target.value)}
-              required
+              onChange={(event) => {
+                setPreferredTimeSlot(event.target.value);
+                clearFieldError("time");
+              }}
             >
               <option value="">Select a time</option>
               <option value="morning">Morning</option>
@@ -317,12 +428,12 @@ function InquiryForm({
           </Field>
         </div>
 
-        {error && (
+        {submitError && (
           <p
             role="alert"
             className="rounded-control border border-error-border bg-error-bg p-4 text-sm font-medium text-error"
           >
-            {error}
+            {submitError}
           </p>
         )}
 

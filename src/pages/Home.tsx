@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import ProcedureGrid from "../components/procedures/ProcedureGrid";
 import ProcedureSearch from "../components/procedures/ProcedureSearch";
 import ProcedureFilters from "../components/procedures/ProcedureFilters";
@@ -19,6 +19,7 @@ type InquiryModalProps = {
   addOns: AddOn[];
   totalPrice: number;
   onCancel: () => void;
+  onStartOver: () => void;
 };
 
 function InquiryModal({
@@ -26,6 +27,7 @@ function InquiryModal({
   addOns,
   totalPrice,
   onCancel,
+  onStartOver,
 }: InquiryModalProps) {
   return (
     <Modal
@@ -41,6 +43,7 @@ function InquiryModal({
         selectedAddOns={addOns}
         totalPrice={totalPrice}
         onCancel={onCancel}
+        onStartOver={onStartOver}
       />
     </Modal>
   );
@@ -61,6 +64,22 @@ function Home() {
   const [inquiryProcedure, setInquiryProcedure] = useState<Procedure | null>(null);
   const [inquiryAddOns, setInquiryAddOns] = useState<AddOn[]>([]);
   const [inquiryTotal, setInquiryTotal] = useState(0);
+
+  const estimatorRef = useRef<HTMLDivElement>(null);
+
+  // Keep the estimator visible after a treatment is selected. On mobile
+  // the grid sits below the estimator, so a new selection would otherwise
+  // be made off-screen.
+  useEffect(() => {
+    if (!selectedProcedure) {
+      return;
+    }
+
+    const node = estimatorRef.current;
+    if (node) {
+      node.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  }, [selectedProcedure]);
 
   // Load procedures on mount
   useEffect(() => {
@@ -149,6 +168,13 @@ function Home() {
     setInquiryTotal(0);
   }, []);
 
+  // Reset the whole flow after a successful submission so the user can
+  // start a fresh estimate.
+  const handleStartOver = useCallback(() => {
+    handleCancelInquiry();
+    setSelectedProcedure(null);
+  }, [handleCancelInquiry]);
+
   return (
     <>
       {/* Hero Section */}
@@ -218,7 +244,7 @@ function Home() {
         {!loading && !error && (
           <>
             {/* Estimator */}
-            <div className="mb-8">
+            <div ref={estimatorRef} className="mb-8 scroll-mt-6">
               <PriceEstimator
                 procedure={selectedProcedure}
                 onClear={() => setSelectedProcedure(null)}
@@ -233,6 +259,7 @@ function Home() {
                 addOns={inquiryAddOns}
                 totalPrice={inquiryTotal}
                 onCancel={handleCancelInquiry}
+                onStartOver={handleStartOver}
               />
             )}
 
@@ -248,6 +275,7 @@ function Home() {
             {/* Grid */}
             <ProcedureGrid
               procedures={filteredProcedures}
+              selectedId={selectedProcedure?.id ?? null}
               onSelect={setSelectedProcedure}
             />
           </>

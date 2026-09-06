@@ -2,6 +2,7 @@ import { lazy, Suspense } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 
 import Header from "./components/layout/Header";
+import Footer from "./components/layout/Footer";
 import Home from "./pages/Home";
 import AdminRoute from "./components/auth/AdminRoute";
 import AdminLayout from "./components/admin/AdminLayout";
@@ -27,9 +28,12 @@ function App() {
         <Route
           path="/"
           element={
-            <div className="min-h-screen bg-bg">
+            <div className="flex min-h-screen flex-col bg-bg">
               <Header />
-              <Home />
+              <div className="flex-1">
+                <Home />
+              </div>
+              <Footer />
             </div>
           }
         />
