@@ -1,17 +1,36 @@
-import { useCallback, useEffect, useState } from "react";
-import { Link } from "react-router-dom";
-import { Card, SectionHeader, Button, EmptyState, LoadingState } from "../components/ui";
-import { getDashboardData, type DashboardData } from "../services/dashboard";
+import { useEffect, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import {
+  Card,
+  Button,
+  EmptyState,
+  LoadingState,
+  DataTable,
+} from "../components/ui";
+import {
+  getDashboardData,
+  isDashboardAuthError,
+  type DashboardData,
+} from "../services/dashboard";
 import type { AppointmentWithDetails } from "../types/appointment";
 import type { Inquiry } from "../types/inquiry";
 import AppointmentDetails from "../components/admin/AppointmentDetails";
 import InquiryDetails from "../components/admin/InquiryDetails";
 import { AppointmentStatusBadge } from "../components/admin/appointmentPrimitives";
 import { InquiryStatusBadge } from "../components/admin/primitives";
+import {
+  IconNotifications,
+  IconSearch,
+  IconInquiries,
+  IconCalendar,
+  IconPatients,
+  IconTreatments,
+  IconChevronRight,
+} from "../components/admin/icons";
 import { formatPrice } from "../lib/formatPrice";
 
 // ─────────────────────────────────────────────
-// LOCAL DATE / TIME HELPERS
+// LOCAL FORMATTING HELPERS
 // ─────────────────────────────────────────────
 
 function todayLabel(): string {
@@ -31,7 +50,7 @@ function formatTime(time: string): string {
   return `${display}:${m} ${suffix}`;
 }
 
-function formatShortDate(dateStr: string): string {
+function formatPreferredDate(dateStr: string): string {
   const date = new Date(dateStr + "T00:00:00");
   return date.toLocaleDateString("en-US", {
     weekday: "short",
@@ -40,128 +59,326 @@ function formatShortDate(dateStr: string): string {
   });
 }
 
-function formatCreatedAt(value: string): string {
-  const date = new Date(value);
-  return Number.isNaN(date.getTime())
-    ? value
-    : date.toLocaleDateString("en-US", {
-        month: "short",
-        day: "numeric",
-      });
+function dateChipParts(dateStr: string) {
+  const date = new Date(dateStr + "T00:00:00");
+  return {
+    weekday: date.toLocaleDateString("en-US", { weekday: "short" }),
+    day: date.getDate(),
+    month: date.toLocaleDateString("en-US", { month: "short" }),
+  };
 }
 
-// ─────────────────────────────────────────────
-// SUMMARY CARD
-// ─────────────────────────────────────────────
+function refNo(id: string): string {
+  return `INQ-${id.slice(0, 6).toUpperCase()}`;
+}
 
-type SummaryCardProps = {
-  label: string;
-  value: number;
-  valueClassName?: string;
-  to?: string;
-  hint?: string;
-};
+function treatmentLabel(
+  inquiry: Inquiry,
+  procedureNames: Record<string, string>
+): string {
+  const ids = inquiry.selected_procedure_ids ?? [];
+  const names = ids
+    .map((id) => procedureNames[id])
+    .filter((name): name is string => Boolean(name));
 
-function SummaryCard({
-  label,
-  value,
-  valueClassName = "text-ink",
-  to,
-  hint,
-}: SummaryCardProps) {
-  const inner = (
-    <>
-      <p className="text-sm font-medium text-slate-500">{label}</p>
-      <p className={`mt-2 text-3xl font-bold ${valueClassName}`}>
-        {value}
-      </p>
-      {hint && <p className="mt-1 text-xs text-slate-400">{hint}</p>}
-    </>
-  );
-
-  if (to) {
-    return (
-      <Link
-        to={to}
-        className="block rounded-card border border-border bg-surface p-6 shadow-card transition-colors hover:bg-bg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
-      >
-        {inner}
-      </Link>
-    );
+  if (names.length === 0) {
+    return "Consultation";
   }
 
-  return <Card className="p-6">{inner}</Card>;
+  if (names.length === 1) {
+    return names[0];
+  }
+
+  return `${names[0]} +${names.length - 1} more`;
 }
 
 // ─────────────────────────────────────────────
-// APPOINTMENT ROW (button)
+// STATISTIC CARD
 // ─────────────────────────────────────────────
 
-function AppointmentRow({
+type StatCardProps = {
+  label: string;
+  value: number;
+  hint: string;
+  to: string;
+  icon: (props: { className?: string }) => React.JSX.Element;
+  iconBoxClass: string;
+  iconClass: string;
+};
+
+function StatCard({
+  label,
+  value,
+  hint,
+  to,
+  icon: Icon,
+  iconBoxClass,
+  iconClass,
+}: StatCardProps) {
+  return (
+    <Link
+      to={to}
+      className="group rounded-card border border-border bg-surface p-5 shadow-card transition-all hover:-translate-y-0.5 hover:border-accent/40 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+    >
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="text-sm font-medium text-slate-500">{label}</p>
+          <p className="mt-2 text-3xl font-bold text-ink">{value}</p>
+        </div>
+        <div
+          className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-card ${iconBoxClass}`}
+        >
+          <Icon className={`h-5 w-5 ${iconClass}`} />
+        </div>
+      </div>
+      <p className="mt-3 text-xs text-slate-400">{hint}</p>
+    </Link>
+  );
+}
+
+// ─────────────────────────────────────────────
+// UPCOMING APPOINTMENT CARD
+// ─────────────────────────────────────────────
+
+function UpcomingAppointmentCard({
   appointment,
   onSelect,
 }: {
   appointment: AppointmentWithDetails;
   onSelect: (id: string) => void;
 }) {
+  const parts = dateChipParts(appointment.appointment_date);
+  const items = appointment.appointment_items ?? [];
+  const patient = appointment.patient?.full_name ?? "Unknown patient";
+  const primary = items[0]?.item_name;
+  const extra = items.length > 1 ? ` +${items.length - 1} more` : "";
+
   return (
     <button
       type="button"
       onClick={() => onSelect(appointment.id)}
-      className="flex w-full items-center justify-between gap-4 rounded-control border border-border bg-surface p-4 text-left transition-colors hover:bg-bg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+      className="w-full rounded-control border border-border bg-bg/60 p-3 text-left transition-colors hover:border-accent/50 hover:bg-bg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
     >
-      <div className="min-w-0">
-        <p className="font-medium text-ink">
-          {appointment.patient?.full_name ?? "Unknown patient"}
-        </p>
-        <p className="mt-1 text-sm text-slate-500">
-          {formatShortDate(appointment.appointment_date)} ·{" "}
-          {formatTime(appointment.appointment_start_time)} –{" "}
-          {formatTime(appointment.appointment_end_time)}
-        </p>
-        {(appointment.appointment_items ?? []).length > 0 && (
-          <p className="mt-1 text-xs text-slate-400">
-            {appointment.appointment_items[0].item_name}
-            {(appointment.appointment_items?.length ?? 0) > 1 &&
-              ` +${(appointment.appointment_items?.length ?? 0) - 1} more`}
+      <div className="flex items-start gap-3">
+        <div className="flex w-12 shrink-0 flex-col items-center rounded-control border border-border bg-surface py-1.5">
+          <span className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">
+            {parts.weekday}
+          </span>
+          <span className="text-base font-bold leading-tight text-ink">
+            {parts.day}
+          </span>
+          <span className="text-[10px] font-semibold uppercase tracking-wide text-primary">
+            {parts.month}
+          </span>
+        </div>
+
+        <div className="min-w-0 flex-1">
+          <div className="flex items-start justify-between gap-2">
+            <p className="truncate text-sm font-semibold text-ink">
+              {patient}
+            </p>
+            <AppointmentStatusBadge status={appointment.status} />
+          </div>
+          <p className="mt-0.5 truncate text-xs text-slate-500">
+            {primary ? `${primary}${extra}` : "General appointment"}
           </p>
-        )}
+          <p className="mt-1 text-xs font-medium text-primary">
+            {formatTime(appointment.appointment_start_time)} –{" "}
+            {formatTime(appointment.appointment_end_time)}
+          </p>
+        </div>
       </div>
-      <AppointmentStatusBadge status={appointment.status} />
     </button>
   );
 }
 
 // ─────────────────────────────────────────────
-// INQUIRY ROW (button)
+// DASHBOARD CONTENT
+// Renders once dashboard data has loaded.
 // ─────────────────────────────────────────────
 
-function InquiryRow({
-  inquiry,
-  onSelect,
+function DashboardContent({
+  data,
+  onViewAppointment,
+  onViewInquiry,
 }: {
-  inquiry: Inquiry;
-  onSelect: (inquiry: Inquiry) => void;
+  data: DashboardData;
+  onViewAppointment: (id: string) => void;
+  onViewInquiry: (inquiry: Inquiry) => void;
 }) {
+  const { summary, recentInquiries, upcomingAppointments, procedureNameMap } =
+    data;
+
   return (
-    <button
-      type="button"
-      onClick={() => onSelect(inquiry)}
-      className="flex w-full items-center justify-between gap-4 rounded-control border border-border bg-surface p-4 text-left transition-colors hover:bg-bg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
-    >
-      <div className="min-w-0">
-        <p className="font-medium text-ink">{inquiry.patient_name}</p>
-        <p className="mt-1 text-sm text-slate-500">
-          {inquiry.preferred_date} ·{" "}
-          <span className="capitalize">{inquiry.preferred_time_slot}</span>
-        </p>
-        <p className="mt-1 text-xs text-slate-400">
-          {formatPrice(inquiry.calculated_total_price)} · Created{" "}
-          {formatCreatedAt(inquiry.created_at)}
-        </p>
+    <div className="space-y-6">
+      {/* STATISTICS CARDS */}
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <StatCard
+          label="Pending Inquiries"
+          value={summary.pendingInquiries}
+          hint="Awaiting review"
+          to="/admin/inquiries?filter=pending"
+          icon={IconInquiries}
+          iconBoxClass="bg-warning-bg"
+          iconClass="text-warning"
+        />
+        <StatCard
+          label="Upcoming Appointments"
+          value={summary.upcomingAppointments}
+          hint="Next 7 days"
+          to="/admin/scheduling?view=list&date=future"
+          icon={IconCalendar}
+          iconBoxClass="bg-info-bg"
+          iconClass="text-info"
+        />
+        <StatCard
+          label="Total Patients"
+          value={summary.totalPatients}
+          hint="All registered patients"
+          to="/admin/patients"
+          icon={IconPatients}
+          iconBoxClass="bg-primary/10"
+          iconClass="text-primary"
+        />
+        <StatCard
+          label="Treatments"
+          value={summary.totalTreatments}
+          hint="Available treatments"
+          to="/admin/treatments"
+          icon={IconTreatments}
+          iconBoxClass="bg-accent/10"
+          iconClass="text-accent"
+        />
       </div>
-      <InquiryStatusBadge status={inquiry.status} />
-    </button>
+
+      {/* RECENT INQUIRIES + UPCOMING APPOINTMENTS */}
+      <div className="grid items-start gap-6 lg:grid-cols-3">
+        {/* Recent Inquiries */}
+        <div className="lg:col-span-2">
+          <div className="flex items-center justify-between gap-3">
+            <h2 className="text-lg font-bold text-ink">Recent Inquiries</h2>
+            <Link
+              to="/admin/inquiries"
+              className="inline-flex items-center gap-1 text-sm font-medium text-primary underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+            >
+              View all <IconChevronRight className="h-4 w-4" />
+            </Link>
+          </div>
+
+          <DataTable
+            className="mt-3"
+            ariaLabel="Recent inquiries"
+            rows={recentInquiries}
+            getRowId={(inquiry) => inquiry.id}
+            emptyTitle="No inquiries yet."
+            emptyDescription="Consultation requests will appear here once submitted."
+            columns={[
+              {
+                key: "ref",
+                header: "Ref. No.",
+                render: (inquiry) => (
+                  <span className="whitespace-nowrap text-xs font-semibold uppercase tracking-wide text-slate-500">
+                    {refNo(inquiry.id)}
+                  </span>
+                ),
+              },
+              {
+                key: "patient",
+                header: "Patient",
+                render: (inquiry) => (
+                  <p className="whitespace-nowrap font-medium text-ink">
+                    {inquiry.patient_name}
+                  </p>
+                ),
+              },
+              {
+                key: "treatment",
+                header: "Treatment",
+                render: (inquiry) => (
+                  <span className="whitespace-nowrap text-sm text-slate-600">
+                    {treatmentLabel(inquiry, procedureNameMap)}
+                  </span>
+                ),
+              },
+              {
+                key: "total",
+                header: "Est. Total",
+                render: (inquiry) => (
+                  <span className="whitespace-nowrap text-sm font-semibold text-ink">
+                    {formatPrice(inquiry.calculated_total_price)}
+                  </span>
+                ),
+              },
+              {
+                key: "date",
+                header: "Preferred Date",
+                render: (inquiry) => (
+                  <span className="whitespace-nowrap text-sm text-slate-500">
+                    {formatPreferredDate(inquiry.preferred_date)}
+                  </span>
+                ),
+              },
+              {
+                key: "status",
+                header: "Status",
+                render: (inquiry) => (
+                  <InquiryStatusBadge status={inquiry.status} />
+                ),
+              },
+              {
+                key: "action",
+                header: "Action",
+                align: "right",
+                render: (inquiry) => (
+                  <button
+                    type="button"
+                    onClick={() => onViewInquiry(inquiry)}
+                    className="inline-flex items-center gap-1 whitespace-nowrap rounded-control border border-border bg-surface px-3 py-1.5 text-xs font-semibold text-primary transition-colors hover:border-accent/40 hover:bg-bg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+                  >
+                    View <IconChevronRight className="h-3.5 w-3.5" />
+                  </button>
+                ),
+              },
+            ]}
+          />
+        </div>
+
+        {/* Upcoming Appointments */}
+        <div>
+          <Card className="p-5">
+            <div className="flex items-center justify-between gap-3">
+              <h2 className="text-lg font-bold text-ink">
+                Upcoming Appointments
+              </h2>
+              <Link
+                to="/admin/scheduling?view=list&date=future"
+                className="text-sm font-medium text-primary underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+              >
+                View all
+              </Link>
+            </div>
+
+            {upcomingAppointments.length === 0 ? (
+              <EmptyState
+                className="mt-4"
+                title="No upcoming appointments."
+                description="Confirmed appointments within the next 7 days will appear here."
+              />
+            ) : (
+              <div className="mt-4 space-y-3">
+                {upcomingAppointments.map((appointment) => (
+                  <UpcomingAppointmentCard
+                    key={appointment.id}
+                    appointment={appointment}
+                    onSelect={onViewAppointment}
+                  />
+                ))}
+              </div>
+            )}
+          </Card>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -170,78 +387,173 @@ function InquiryRow({
 // ─────────────────────────────────────────────
 
 function AdminDashboard() {
+  const navigate = useNavigate();
   const [data, setData] = useState<DashboardData | null>(null);
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [sessionError, setSessionError] = useState(false);
+  const [refreshToken, setRefreshToken] = useState(0);
+  const [searchInput, setSearchInput] = useState("");
 
   const [selectedAppointment, setSelectedAppointment] =
     useState<string | null>(null);
-  const [selectedInquiry, setSelectedInquiry] =
-    useState<Inquiry | null>(null);
+  const [selectedInquiry, setSelectedInquiry] = useState<Inquiry | null>(null);
 
-  const load = useCallback(() => {
-    setLoading(true);
-    setError(null);
+  const loading = data === null && error === null;
+
+  useEffect(() => {
+    let cancelled = false;
 
     getDashboardData()
       .then((result) => {
-        setData(result);
+        if (!cancelled) {
+          setData(result);
+          setError(null);
+          setSessionError(false);
+        }
       })
       .catch((err) => {
         console.error(err);
-        setError("Unable to load dashboard data.");
-      })
-      .finally(() => {
-        setLoading(false);
+        if (!cancelled) {
+          if (isDashboardAuthError(err)) {
+            // Session unavailable or expired: distinct state so the UI does
+            // not keep retrying data queries that will never authorize.
+            setSessionError(true);
+            setError(null);
+          } else {
+            setSessionError(false);
+            setError("Unable to load dashboard data.");
+          }
+        }
       });
-  }, []);
 
-  useEffect(() => {
-    load();
-  }, [load]);
+    return () => {
+      cancelled = true;
+    };
+  }, [refreshToken]);
 
-  // Refresh after a modal mutation so counts/lists stay accurate
   function handleAppointmentUpdated() {
-    load();
+    setRefreshToken((current) => current + 1);
   }
 
   function handleInquiryUpdated() {
-    load();
+    setRefreshToken((current) => current + 1);
+  }
+
+  function handleRetry() {
+    setError(null);
+    setSessionError(false);
+    setRefreshToken((current) => current + 1);
+  }
+
+  function handleSearchKeyDown(event: React.KeyboardEvent<HTMLInputElement>) {
+    if (event.key === "Enter") {
+      navigate("/admin/patients");
+    }
   }
 
   return (
-    <div className="space-y-8">
-      <SectionHeader
-        title="Operational dashboard"
-        subtitle={`Overview of your clinic's current state · ${todayLabel()}`}
-      />
+    <div>
+      {/* TOP HEADER */}
+      <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-ink">Dashboard</h1>
+          <p className="mt-0.5 text-sm text-slate-500">
+            Overview of clinic activity · {todayLabel()}
+          </p>
+        </div>
+
+        <div className="flex w-full items-center gap-3 xl:w-auto">
+          <div className="relative w-full xl:w-72">
+            <label htmlFor="dashboard-search" className="sr-only">
+              Search patients, inquiries
+            </label>
+            <IconSearch
+              className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"
+            />
+            <input
+              id="dashboard-search"
+              type="search"
+              value={searchInput}
+              onChange={(event) => setSearchInput(event.target.value)}
+              onKeyDown={handleSearchKeyDown}
+              placeholder="Search patients, inquiries..."
+              className="w-full rounded-control border border-border bg-surface py-2.5 pl-9 pr-3 text-sm text-ink outline-none transition-colors placeholder:text-slate-400 focus:border-accent focus:ring-2 focus:ring-accent/30"
+            />
+          </div>
+
+          <Link
+            to="/admin/inquiries"
+            className="relative inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-control border border-border bg-surface text-ink transition-colors hover:bg-bg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+            aria-label="View recent inquiries"
+          >
+            <IconNotifications className="h-5 w-5" />
+            <span className="absolute right-2 top-2 h-2 w-2 rounded-pill bg-cta" />
+          </Link>
+        </div>
+      </div>
+
+      {/* SESSION EXPIRED */}
+      {sessionError && (
+        <div className="mt-6 rounded-card border border-warning-border bg-warning-bg p-8 text-center">
+          <p className="text-sm font-medium text-warning">
+            Your admin session has expired.
+          </p>
+          <p className="mt-1 text-sm text-slate-600">
+            Please sign in again to continue.
+          </p>
+          <div className="mt-4">
+            <Button
+              type="button"
+              variant="primary"
+              onClick={() => navigate("/admin/login")}
+            >
+              Sign in again
+            </Button>
+          </div>
+        </div>
+      )}
 
       {/* LOADING */}
-      {loading && (
-        <div className="space-y-6">
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
-            {Array.from({ length: 5 }).map((_, i) => (
-              <Card key={i} className="p-6">
-                <LoadingState label="" className="h-4 w-24 rounded bg-slate-200" />
-                <LoadingState label="" className="mt-3 h-8 w-16 rounded bg-slate-200" />
+      {!sessionError && loading && (
+        <div className="mt-6 space-y-6">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <Card key={i} className="p-5">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="space-y-2">
+                    <LoadingState
+                      label=""
+                      className="h-4 w-24 rounded bg-slate-200"
+                    />
+                    <LoadingState
+                      label=""
+                      className="h-8 w-14 rounded bg-slate-200"
+                    />
+                  </div>
+                  <div className="h-11 w-11 rounded-card bg-slate-100" />
+                </div>
+                <LoadingState
+                  label=""
+                  className="mt-4 h-3 w-32 rounded bg-slate-200"
+                />
               </Card>
             ))}
           </div>
-          <LoadingState label="Loading dashboard data..." />
+          <Card className="p-0">
+            <div className="h-72 rounded-card bg-slate-100" />
+          </Card>
         </div>
       )}
 
       {/* ERROR */}
-      {!loading && error && (
-        <div className="rounded-card border border-error-border bg-error-bg p-8 text-center">
+      {!sessionError && !loading && error && (
+        <div className="mt-6 rounded-card border border-error-border bg-error-bg p-8 text-center">
           <p className="text-sm font-medium text-error">
             Unable to load dashboard data.
           </p>
-          <p className="mt-1 text-sm text-slate-600">
-            Please try again.
-          </p>
+          <p className="mt-1 text-sm text-slate-600">Please try again.</p>
           <div className="mt-4">
-            <Button type="button" variant="secondary" onClick={load}>
+            <Button type="button" variant="secondary" onClick={handleRetry}>
               Retry
             </Button>
           </div>
@@ -249,213 +561,14 @@ function AdminDashboard() {
       )}
 
       {/* DATA */}
-      {!loading && !error && data && (
-        <>
-          {/* SUMMARY CARDS */}
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
-            <SummaryCard
-              label="Pending inquiries"
-              value={data.summary.pendingInquiries}
-              valueClassName="text-warning"
-              to="/admin/inquiries?filter=pending"
-            />
-            <SummaryCard
-              label="Today's appointments"
-              value={data.summary.todayAppointments}
-              valueClassName="text-info"
-              to="/admin/scheduling?view=list&date=today"
-            />
-            <SummaryCard
-              label="Upcoming appointments"
-              value={data.summary.upcomingAppointments}
-              valueClassName="text-success"
-              to="/admin/scheduling?view=list&date=future"
-            />
-            <SummaryCard
-              label="Completed today"
-              value={data.summary.completedToday}
-              valueClassName="text-success"
-              to="/admin/scheduling?view=list&date=today"
-            />
-            <SummaryCard
-              label="Cancelled / no show today"
-              value={data.summary.cancelledNoShowToday}
-              valueClassName="text-error"
-              to="/admin/scheduling?view=list&date=today"
-            />
-          </div>
-
-          {/* QUICK ACTIONS */}
-          <section>
-            <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-500">
-              Quick actions
-            </h3>
-            <div className="mt-3 flex flex-wrap gap-3">
-              <Link
-                to="/admin/inquiries"
-                className="inline-flex items-center justify-center gap-2 rounded-control border border-border bg-surface px-4 py-2.5 text-sm font-semibold text-ink transition-colors hover:bg-bg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
-              >
-                View inquiries
-              </Link>
-              <Link
-                to="/admin/inquiries?filter=pending"
-                className="inline-flex items-center justify-center gap-2 rounded-control border border-border bg-surface px-4 py-2.5 text-sm font-semibold text-ink transition-colors hover:bg-bg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
-              >
-                View pending inquiries
-              </Link>
-              <Link
-                to="/admin/scheduling"
-                className="inline-flex items-center justify-center gap-2 rounded-control border border-border bg-surface px-4 py-2.5 text-sm font-semibold text-ink transition-colors hover:bg-bg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
-              >
-                View scheduling
-              </Link>
-              <Link
-                to="/admin/scheduling?view=list&date=today"
-                className="inline-flex items-center justify-center gap-2 rounded-control border border-border bg-surface px-4 py-2.5 text-sm font-semibold text-ink transition-colors hover:bg-bg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
-              >
-                Today&apos;s schedule
-              </Link>
-              <Link
-                to="/admin/patients"
-                className="inline-flex items-center justify-center gap-2 rounded-control border border-border bg-surface px-4 py-2.5 text-sm font-semibold text-ink transition-colors hover:bg-bg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
-              >
-                View patients
-              </Link>
-            </div>
-          </section>
-
-          {/* TODAY'S APPOINTMENTS */}
-          <section>
-            <div className="flex items-baseline justify-between gap-4">
-              <h3 className="text-lg font-bold text-ink">
-                Today&apos;s appointments
-              </h3>
-              <Link
-                to="/admin/scheduling?view=list&date=today"
-                className="text-sm font-medium text-primary underline-offset-2 hover:underline"
-              >
-                View all
-              </Link>
-            </div>
-
-            {data.todayAppointments.length === 0 ? (
-              <EmptyState
-                title="No appointments scheduled for today."
-                description="Newly scheduled appointments will appear here."
-                className="mt-3"
-              />
-            ) : (
-              <div className="mt-3 grid gap-2 sm:grid-cols-2">
-                {data.todayAppointments.map((appt) => (
-                  <AppointmentRow
-                    key={appt.id}
-                    appointment={appt}
-                    onSelect={setSelectedAppointment}
-                  />
-                ))}
-              </div>
-            )}
-          </section>
-
-          {/* UPCOMING APPOINTMENTS */}
-          <section>
-            <div className="flex items-baseline justify-between gap-4">
-              <h3 className="text-lg font-bold text-ink">
-                Upcoming appointments
-              </h3>
-              <Link
-                to="/admin/scheduling?view=list&date=future"
-                className="text-sm font-medium text-primary underline-offset-2 hover:underline"
-              >
-                View all appointments
-              </Link>
-            </div>
-
-            {data.upcomingAppointments.length === 0 ? (
-              <EmptyState
-                title="No upcoming appointments."
-                description="Confirmed future appointments will appear here."
-                className="mt-3"
-              />
-            ) : (
-              <div className="mt-3 space-y-2">
-                {data.upcomingAppointments.map((appt) => (
-                  <AppointmentRow
-                    key={appt.id}
-                    appointment={appt}
-                    onSelect={setSelectedAppointment}
-                  />
-                ))}
-              </div>
-            )}
-          </section>
-
-          {/* PENDING INQUIRIES */}
-          <section>
-            <div className="flex items-baseline justify-between gap-4">
-              <h3 className="text-lg font-bold text-ink">
-                Pending inquiries
-              </h3>
-              <Link
-                to="/admin/inquiries?filter=pending"
-                className="text-sm font-medium text-primary underline-offset-2 hover:underline"
-              >
-                View all
-              </Link>
-            </div>
-
-            {data.pendingInquiries.length === 0 ? (
-              <EmptyState
-                title="No pending inquiries."
-                description="Newly submitted consultation requests will appear here."
-                className="mt-3"
-              />
-            ) : (
-              <div className="mt-3 space-y-2">
-                {data.pendingInquiries.map((inquiry) => (
-                  <InquiryRow
-                    key={inquiry.id}
-                    inquiry={inquiry}
-                    onSelect={setSelectedInquiry}
-                  />
-                ))}
-              </div>
-            )}
-          </section>
-
-          {/* RECENT INQUIRIES */}
-          <section>
-            <div className="flex items-baseline justify-between gap-4">
-              <h3 className="text-lg font-bold text-ink">
-                Recent inquiries
-              </h3>
-              <Link
-                to="/admin/inquiries"
-                className="text-sm font-medium text-primary underline-offset-2 hover:underline"
-              >
-                View all
-              </Link>
-            </div>
-
-            {data.recentInquiries.length === 0 ? (
-              <EmptyState
-                title="No recent inquiries."
-                description="Consultation requests will appear here once submitted."
-                className="mt-3"
-              />
-            ) : (
-              <div className="mt-3 space-y-2">
-                {data.recentInquiries.map((inquiry) => (
-                  <InquiryRow
-                    key={inquiry.id}
-                    inquiry={inquiry}
-                    onSelect={setSelectedInquiry}
-                  />
-                ))}
-              </div>
-            )}
-          </section>
-        </>
+      {!sessionError && !loading && !error && data && (
+        <div className="mt-6">
+          <DashboardContent
+            data={data}
+            onViewAppointment={setSelectedAppointment}
+            onViewInquiry={setSelectedInquiry}
+          />
+        </div>
       )}
 
       {/* APPOINTMENT DETAILS MODAL */}

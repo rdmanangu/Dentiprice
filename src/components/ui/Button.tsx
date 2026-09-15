@@ -1,6 +1,6 @@
 import type { ButtonHTMLAttributes } from "react";
 
-type ButtonVariant = "primary" | "secondary" | "cta" | "danger" | "ghost";
+type ButtonVariant = "primary" | "secondary" | "cta" | "success" | "danger" | "ghost";
 
 type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
   variant?: ButtonVariant;
@@ -15,6 +15,7 @@ const variantClasses: Record<ButtonVariant, string> = {
   secondary:
     "border border-border bg-surface text-ink hover:bg-bg",
   cta: "bg-accent text-white hover:brightness-95",
+  success: "bg-success text-white hover:brightness-95",
   danger: "bg-error text-white hover:brightness-110",
   ghost: "text-ink hover:bg-bg",
 };

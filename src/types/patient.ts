@@ -1,4 +1,4 @@
-import type { Inquiry } from "./inquiry";
+import type { Inquiry, InquiryStatus } from "./inquiry";
 import type { Appointment, AppointmentStatus } from "./appointment";
 
 export interface Patient {
@@ -30,11 +30,23 @@ export interface UpcomingAppointment {
   status: AppointmentStatus;
 }
 
+// The patient's most recent inquiry, with its item snapshots, so the
+// patient list can surface the latest treatment, add-ons, estimated
+// total, reference, and relative age of the inquiry.
+export interface LatestInquirySummary {
+  id: string;
+  calculated_total_price: number;
+  status: InquiryStatus;
+  created_at: string;
+  items: InquiryItemSnapshot[];
+}
+
 export interface PatientListItem extends Patient {
   inquiry_count: number;
   appointment_count: number;
   latest_activity: string | null;
   upcoming_appointment: UpcomingAppointment | null;
+  latest_inquiry: LatestInquirySummary | null;
 }
 
 export interface PatientListResult {

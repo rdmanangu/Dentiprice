@@ -20,23 +20,79 @@ function todayLocalString(): string {
 }
 
 // ─────────────────────────────────────────────
+// AUTHENTICATION GUARD
+// The dashboard must never query PostgREST without a live session.
+// getSession() does NOT revalidate token expiry, so an expired JWT can
+// otherwise be attached to every query and produce HTTP 401 responses.
+// ─────────────────────────────────────────────
+
+export class DashboardAuthError extends Error {
+  constructor(
+    message = "Your admin session is unavailable or has expired."
+  ) {
+    super(message);
+    this.name = "DashboardAuthError";
+  }
+}
+
+export function isDashboardAuthError(
+  error: unknown
+): error is DashboardAuthError {
+  return error instanceof DashboardAuthError;
+}
+
+export async function ensureAdminSession(): Promise<void> {
+  const { data, error } = await supabase.auth.getSession();
+
+  if (error) {
+    console.error("Unable to read admin session:", error);
+    throw new DashboardAuthError();
+  }
+
+  const session = data.session;
+
+  if (!session) {
+    throw new DashboardAuthError();
+  }
+
+  if (session.user.app_metadata.role !== "admin") {
+    throw new DashboardAuthError("Admin access is required.");
+  }
+
+  // getSession() returns the stored session even when the access token has
+  // already expired. Refresh before querying so we never send an expired
+  // JWT to PostgREST. If the refresh token is also invalid, the session is
+  // cleared and we exit to the login state instead of looping on 401s.
+  const expiresAt = session.expires_at;
+  if (expiresAt && expiresAt <= Math.floor(Date.now() / 1000)) {
+    const refresh = await supabase.auth.refreshSession({
+      refresh_token: session.refresh_token,
+    });
+
+    if (refresh.error || !refresh.data.session) {
+      console.error("Admin session refresh failed:", refresh.error);
+      throw new DashboardAuthError();
+    }
+  }
+}
+
+// ─────────────────────────────────────────────
 // DASHBOARD DATA
 // ─────────────────────────────────────────────
 
 export type DashboardSummary = {
   pendingInquiries: number;
-  todayAppointments: number;
   upcomingAppointments: number;
-  completedToday: number;
-  cancelledNoShowToday: number;
+  totalPatients: number;
+  totalTreatments: number;
 };
 
 export type DashboardData = {
   summary: DashboardSummary;
-  todayAppointments: AppointmentWithDetails[];
   upcomingAppointments: AppointmentWithDetails[];
   pendingInquiries: Inquiry[];
   recentInquiries: Inquiry[];
+  procedureNameMap: Record<string, string>;
 };
 
 // ─────────────────────────────────────────────
@@ -48,6 +104,10 @@ export type DashboardData = {
 // ─────────────────────────────────────────────
 
 export async function getDashboardData(): Promise<DashboardData> {
+  // Never query before a live admin session exists (prevents the dashboard
+  // from firing requests with a missing or expired JWT → HTTP 401).
+  await ensureAdminSession();
+
   const today = todayLocalString();
 
   const appointmentSelect = `
@@ -61,18 +121,31 @@ export async function getDashboardData(): Promise<DashboardData> {
     )
   `;
 
-  const [apptsRes, upcomingRes, pendingRes, recentRes] = await Promise.all([
-    // Today's appointments: appointment date == today
+  const upcomingFrom = new Date(today);
+  upcomingFrom.setDate(upcomingFrom.getDate() + 1);
+  const upcomingFromStr = `${upcomingFrom.getFullYear()}-${String(
+    upcomingFrom.getMonth() + 1
+  ).padStart(2, "0")}-${String(upcomingFrom.getDate()).padStart(2, "0")}`;
+
+  const upcomingTo = new Date(today);
+  upcomingTo.setDate(upcomingTo.getDate() + 7);
+  const upcomingToStr = `${upcomingTo.getFullYear()}-${String(
+    upcomingTo.getMonth() + 1
+  ).padStart(2, "0")}-${String(upcomingTo.getDate()).padStart(2, "0")}`;
+
+  const [
+    upcomingRes,
+    pendingRes,
+    recentRes,
+    patientCountRes,
+    procedureCountRes,
+  ] = await Promise.all([
+    // Upcoming appointments within the next 7 days (exclude cancelled / completed)
     supabase
       .from("appointments")
       .select(appointmentSelect)
-      .eq("appointment_date", today)
-      .order("appointment_start_time", { ascending: true }),
-    // Upcoming operational appointments (exclude cancelled / completed)
-    supabase
-      .from("appointments")
-      .select(appointmentSelect)
-      .gt("appointment_date", today)
+      .gte("appointment_date", upcomingFromStr)
+      .lte("appointment_date", upcomingToStr)
       .not("status", "in", "('cancelled','completed')")
       .order("appointment_date", { ascending: true })
       .order("appointment_start_time", { ascending: true })
@@ -89,49 +162,82 @@ export async function getDashboardData(): Promise<DashboardData> {
       .from("inquiries")
       .select("*")
       .order("created_at", { ascending: false })
-      .limit(6),
+      .limit(8),
+    // Total patients count
+    supabase
+      .from("patients")
+      .select("id", { count: "exact", head: true }),
+    // Total treatments count
+    supabase
+      .from("procedures")
+      .select("id", { count: "exact", head: true }),
   ]);
 
-  for (const res of [apptsRes, upcomingRes, pendingRes, recentRes]) {
+  for (const res of [
+    upcomingRes,
+    pendingRes,
+    recentRes,
+    patientCountRes,
+    procedureCountRes,
+  ]) {
     if (res.error) {
+      // A 401 here means the JWT attached to the request was rejected mid-flight
+      // (e.g. it expired after the guard above ran). Re-check the session so
+      // authentication failures are distinguishable from data/RLS/query errors.
+      const sessionCheck = await supabase.auth.getSession();
+
+      if (sessionCheck.error || !sessionCheck.data.session) {
+        console.error(
+          "Dashboard query failed because the admin session was lost:",
+          res.error
+        );
+        throw new DashboardAuthError();
+      }
+
       console.error("Get dashboard data error:", res.error);
       throw res.error;
     }
   }
 
-  const todayAppointments = (apptsRes.data ?? []) as AppointmentWithDetails[];
   const upcomingAppointments = (upcomingRes.data ?? []) as AppointmentWithDetails[];
   const pendingInquiries = (pendingRes.data ?? []) as Inquiry[];
   const recentInquiries = (recentRes.data ?? []) as Inquiry[];
 
-  // Upcoming operational count: exclude cancelled / completed
-  const upcomingOperational = upcomingAppointments.filter(
-    (a) => a.status !== "cancelled" && a.status !== "completed"
+  const totalPatients = patientCountRes.count ?? 0;
+  const totalTreatments = procedureCountRes.count ?? 0;
+
+  // Build a procedure ID → name map for the recent inquiries table.
+  const procedureIds = Array.from(
+    new Set(
+      recentInquiries.flatMap((inquiry) => inquiry.selected_procedure_ids ?? [])
+    )
   );
 
-  const upcomingCount = upcomingOperational
-    .filter((a) => a.status === "scheduled" || a.status === "confirmed")
-    .length;
+  let procedureNameMap: Record<string, string> = {};
 
-  const completedToday = todayAppointments.filter(
-    (a) => a.status === "completed"
-  ).length;
+  if (procedureIds.length > 0) {
+    const { data: procedureRows } = await supabase
+      .from("procedures")
+      .select("id, name")
+      .in("id", procedureIds);
 
-  const cancelledNoShowToday = todayAppointments.filter(
-    (a) => a.status === "cancelled" || a.status === "no_show"
-  ).length;
+    if (procedureRows) {
+      procedureNameMap = Object.fromEntries(
+        procedureRows.map((row) => [row.id, row.name])
+      );
+    }
+  }
 
   return {
     summary: {
       pendingInquiries: pendingInquiries.length,
-      todayAppointments: todayAppointments.length,
-      upcomingAppointments: upcomingCount,
-      completedToday,
-      cancelledNoShowToday,
+      upcomingAppointments: upcomingAppointments.length,
+      totalPatients,
+      totalTreatments,
     },
-    todayAppointments,
     upcomingAppointments,
     pendingInquiries,
     recentInquiries,
+    procedureNameMap,
   };
 }

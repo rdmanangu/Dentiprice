@@ -11,11 +11,17 @@ function AdminRoute({ children }: AdminRouteProps) {
   const [authenticated, setAuthenticated] = useState(false);
 
   useEffect(() => {
-    async function checkAuth() {
+    let active = true;
+
+    async function evaluate() {
       const {
         data: { session },
         error,
       } = await supabase.auth.getSession();
+
+      if (!active) {
+        return;
+      }
 
       if (error) {
         console.error(
@@ -28,7 +34,21 @@ function AdminRoute({ children }: AdminRouteProps) {
       setLoading(false);
     }
 
-    checkAuth();
+    // Initial one-shot check on mount.
+    evaluate();
+
+    // Stay reactive to session lifetime events (sign-in, token refresh,
+    // sign-out, expiry). When the session is lost, the user is returned
+    // to the login page instead of being left on a dashboard that keeps
+    // failing with 401 responses.
+    const { data: subscription } = supabase.auth.onAuthStateChange(() => {
+      evaluate();
+    });
+
+    return () => {
+      active = false;
+      subscription.subscription.unsubscribe();
+    };
   }, []);
 
   if (loading) {

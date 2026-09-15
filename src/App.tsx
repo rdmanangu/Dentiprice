@@ -11,6 +11,7 @@ const AdminLogin = lazy(() => import("./pages/AdminLogin"));
 const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
 const InquiriesPage = lazy(() => import("./pages/InquiriesPage"));
 const PatientsPage = lazy(() => import("./pages/PatientsPage"));
+const PatientDetailsPage = lazy(() => import("./pages/PatientDetailsPage"));
 const SchedulingPage = lazy(() => import("./pages/SchedulingPage"));
 const TreatmentsPage = lazy(() => import("./pages/TreatmentsPage"));
 
@@ -54,6 +55,7 @@ function App() {
           <Route index element={<AdminDashboard />} />
           <Route path="inquiries" element={<InquiriesPage />} />
           <Route path="patients" element={<PatientsPage />} />
+          <Route path="patients/:id" element={<PatientDetailsPage />} />
           <Route path="scheduling" element={<SchedulingPage />} />
           <Route path="treatments" element={<TreatmentsPage />} />
         </Route>

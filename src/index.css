@@ -16,6 +16,14 @@
   --color-ink: #2e0a14;          /* darkest text                       */
   --color-surface: #ffffff;      /* cards, panels, modals              */
 
+  /* ── Admin sidebar ─────────────────────────── */
+  --color-sidebar: #4a0f1f;              /* dark burgundy sidebar bg    */
+  --color-sidebar-hover: #5c1428;        /* sidebar hover shade         */
+  --color-sidebar-border: #3a0c19;       /* inner border / divider      */
+  --color-sidebar-text: rgba(255, 255, 255, 0.68);        /* muted nav text */
+  --color-sidebar-text-active: #ffffff;  /* active nav text             */
+  --color-sidebar-active-bg: rgba(216, 64, 112, 0.18);    /* active pill  */
+
   /* ── Neutrals ───────────────────────────────── */
   --color-bg: #f8fafc;           /* page background                    */
   --color-border: #e2e8f0;       /* card / form / table borders        */
@@ -61,6 +69,12 @@
   --color-surface: #ffffff;
   --color-bg: #f8fafc;
   --color-border: #e2e8f0;
+  --color-sidebar: #4a0f1f;
+  --color-sidebar-hover: #5c1428;
+  --color-sidebar-border: #3a0c19;
+  --color-sidebar-text: rgba(255, 255, 255, 0.68);
+  --color-sidebar-text-active: #ffffff;
+  --color-sidebar-active-bg: rgba(216, 64, 112, 0.18);
   --color-success: #15803d;
   --color-warning: #b45309;
   --color-error: #b91c1c;

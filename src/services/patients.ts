@@ -12,8 +12,9 @@ import type {
   CreatePatientInput,
   UpdatePatientInput,
   UpcomingAppointment,
+  LatestInquirySummary,
 } from "../types/patient";
-import type { Inquiry } from "../types/inquiry";
+import type { Inquiry, InquiryStatus } from "../types/inquiry";
 import type {
   Appointment,
   AppointmentStatus,
@@ -287,6 +288,15 @@ type UpcomingAppointmentRow = {
   status: AppointmentStatus;
 };
 
+type LatestInquiryRow = {
+  id: string;
+  patient_id: string;
+  calculated_total_price: number;
+  status: InquiryStatus;
+  created_at: string;
+  inquiry_items?: InquiryItemSnapshot[] | null;
+};
+
 export async function listPatients(
   params: ListPatientsParams = {}
 ): Promise<PatientListResult> {
@@ -331,6 +341,7 @@ export async function listPatients(
     inquiryRows,
     appointmentRows,
     upcomingRows,
+    latestInquiryRows,
   ] = await Promise.all([
     // Raw inquiry patient_id rows for the visible patients. Counts are
     // computed in TypeScript below; plain column fetches avoid the
@@ -372,6 +383,18 @@ export async function listPatients(
       .order("appointment_date", { ascending: true })
       .order("appointment_start_time", { ascending: true })
       .returns<UpcomingAppointmentRow[]>(),
+    // Latest inquiry per patient (with item snapshots). Ordered by creation
+    // timestamp descending so the first row encountered per patient is the
+    // most recent inquiry.
+    supabase
+      .from("inquiries")
+      .select(
+        `id, patient_id, calculated_total_price, status, created_at,
+         inquiry_items(id, procedure_id, add_on_id, item_name, item_price)`
+      )
+      .in("patient_id", patientIds)
+      .order("created_at", { ascending: false })
+      .returns<LatestInquiryRow[]>(),
   ]);
 
   for (const result of [
@@ -380,6 +403,7 @@ export async function listPatients(
     inquiryRows,
     appointmentRows,
     upcomingRows,
+    latestInquiryRows,
   ]) {
     if (result.error) {
       console.error("List patients stats error:", result.error);
@@ -438,6 +462,21 @@ export async function listPatients(
     }
   }
 
+  // First row encountered per patient is the latest inquiry because the
+  // query is ordered by creation timestamp descending.
+  const latestInquiryMap = new Map<string, LatestInquirySummary>();
+  for (const row of latestInquiryRows.data ?? []) {
+    if (!latestInquiryMap.has(row.patient_id)) {
+      latestInquiryMap.set(row.patient_id, {
+        id: row.id,
+        calculated_total_price: row.calculated_total_price,
+        status: row.status,
+        created_at: row.created_at,
+        items: row.inquiry_items ?? [],
+      });
+    }
+  }
+
   const list: PatientListItem[] = patients.map((patient) => {
     const inquiryLatest = inquiryLatestMap.get(patient.id) ?? null;
     const appointmentLatest = appointmentLatestMap.get(patient.id) ?? null;
@@ -463,6 +502,7 @@ export async function listPatients(
       appointment_count: appointmentCountMap.get(patient.id) ?? 0,
       latest_activity: latestActivity,
       upcoming_appointment: upcomingMap.get(patient.id) ?? null,
+      latest_inquiry: latestInquiryMap.get(patient.id) ?? null,
     };
   });
 
