@@ -78,6 +78,8 @@ function PatientHistory({
   const [selectedAppointmentId, setSelectedAppointmentId] =
     useState<string | null>(null);
 
+  const [loadError, setLoadError] = useState<string | null>(null);
+
   useEffect(() => {
     let cancelled = false;
 
@@ -105,12 +107,15 @@ function PatientHistory({
   }, [patientId]);
 
   function loadHistory() {
+    setLoadError(null);
+
     getPatientHistory(patientId)
       .then((data) => {
         setHistory(data);
       })
       .catch((err) => {
         console.error(err);
+        setLoadError("Unable to refresh patient history. Please try again.");
       });
   }
 
@@ -234,6 +239,15 @@ function PatientHistory({
 
       {!loading && !error && history && (
         <div className="space-y-6">
+          {loadError && (
+            <p
+              role="alert"
+              className="rounded-control border border-error-border bg-error-bg p-3 text-sm font-medium text-error"
+            >
+              {loadError}
+            </p>
+          )}
+
           {/* ── PATIENT INFORMATION / EDIT ─────────────────────── */}
           {editing ? (
             <section className="rounded-card border border-border bg-surface p-5">

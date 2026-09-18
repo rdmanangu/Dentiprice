@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { createInquiry } from "../../services/inquiries";
 import { Button, Field, Input, Select } from "../ui";
 import { formatPrice } from "../../lib/formatPrice";
@@ -75,6 +75,11 @@ function InquiryForm({
   const [fieldErrors, setFieldErrors] = useState<{ [key: string]: string }>({});
   const [success, setSuccess] = useState(false);
 
+  // Guards against double-submission. The `submitting` state object alone is
+  // not enough: two rapid submits can both read the stale closure value
+  // (false) before React re-renders. A ref updates synchronously.
+  const submissionInFlight = useRef(false);
+
   const today = todayLocalString();
 
   function clearFieldError(field: string) {
@@ -112,8 +117,11 @@ function InquiryForm({
 
     if (!phoneNumber.trim()) {
       errors.phone = "Please enter your phone number.";
-    } else if (phoneNumber.replace(/\D/g, "").length < 7) {
-      errors.phone = "Please enter a valid phone number.";
+    } else {
+      const phoneDigits = phoneNumber.replace(/\D/g, "").length;
+      if (phoneDigits < 7 || phoneDigits > 15) {
+        errors.phone = "Please enter a valid phone number.";
+      }
     }
 
     if (!emailAddress.trim()) {
@@ -140,7 +148,7 @@ function InquiryForm({
   ) {
     event.preventDefault();
 
-    if (submitting) {
+    if (submitting || submissionInFlight.current) {
       return;
     }
 
@@ -182,6 +190,7 @@ function InquiryForm({
     }
 
     try {
+      submissionInFlight.current = true;
       setSubmitting(true);
 
       await createInquiry({
@@ -202,6 +211,7 @@ function InquiryForm({
       console.error("INQUIRY SUBMISSION ERROR:", error);
       setSubmitError(userMessageFor(error));
     } finally {
+      submissionInFlight.current = false;
       setSubmitting(false);
     }
   }
@@ -347,6 +357,7 @@ function InquiryForm({
               clearFieldError("name");
             }}
             autoComplete="name"
+            maxLength={100}
           />
         </Field>
 
@@ -365,6 +376,7 @@ function InquiryForm({
               clearFieldError("phone");
             }}
             autoComplete="tel"
+            maxLength={30}
           />
         </Field>
 
@@ -383,6 +395,7 @@ function InquiryForm({
               clearFieldError("email");
             }}
             autoComplete="email"
+            maxLength={100}
           />
         </Field>
 

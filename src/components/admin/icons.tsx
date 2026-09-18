@@ -120,14 +120,6 @@ export function IconChevronRight({ className = "" }: IconProps) {
   );
 }
 
-export function IconChevronDown({ className = "" }: IconProps) {
-  return (
-    <BaseIcon className={className}>
-      <path d="m6 9 6 6 6-6" />
-    </BaseIcon>
-  );
-}
-
 export function IconDownload({ className = "" }: IconProps) {
   return (
     <BaseIcon className={className}>

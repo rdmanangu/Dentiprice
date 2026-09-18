@@ -28,6 +28,7 @@ import {
   IconChevronRight,
 } from "../components/admin/icons";
 import { formatPrice } from "../lib/formatPrice";
+import { formatTime12, inquiryRef } from "../lib/patientDisplay";
 
 // ─────────────────────────────────────────────
 // LOCAL FORMATTING HELPERS
@@ -40,14 +41,6 @@ function todayLabel(): string {
     day: "numeric",
     year: "numeric",
   });
-}
-
-function formatTime(time: string): string {
-  const [h, m] = time.split(":");
-  const hour = parseInt(h, 10);
-  const suffix = hour >= 12 ? "PM" : "AM";
-  const display = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
-  return `${display}:${m} ${suffix}`;
 }
 
 function formatPreferredDate(dateStr: string): string {
@@ -66,10 +59,6 @@ function dateChipParts(dateStr: string) {
     day: date.getDate(),
     month: date.toLocaleDateString("en-US", { month: "short" }),
   };
-}
-
-function refNo(id: string): string {
-  return `INQ-${id.slice(0, 6).toUpperCase()}`;
 }
 
 function treatmentLabel(
@@ -183,8 +172,8 @@ function UpcomingAppointmentCard({
             {primary ? `${primary}${extra}` : "General appointment"}
           </p>
           <p className="mt-1 text-xs font-medium text-primary">
-            {formatTime(appointment.appointment_start_time)} –{" "}
-            {formatTime(appointment.appointment_end_time)}
+            {formatTime12(appointment.appointment_start_time)} –{" "}
+            {formatTime12(appointment.appointment_end_time)}
           </p>
         </div>
       </div>
@@ -278,7 +267,7 @@ function DashboardContent({
                 header: "Ref. No.",
                 render: (inquiry) => (
                   <span className="whitespace-nowrap text-xs font-semibold uppercase tracking-wide text-slate-500">
-                    {refNo(inquiry.id)}
+                    {inquiryRef(inquiry.id)}
                   </span>
                 ),
               },
@@ -447,7 +436,12 @@ function AdminDashboard() {
 
   function handleSearchKeyDown(event: React.KeyboardEvent<HTMLInputElement>) {
     if (event.key === "Enter") {
-      navigate("/admin/patients");
+      const term = searchInput.trim();
+      navigate(
+        term
+          ? `/admin/patients?search=${encodeURIComponent(term)}`
+          : "/admin/patients"
+      );
     }
   }
 

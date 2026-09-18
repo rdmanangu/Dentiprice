@@ -26,6 +26,11 @@ function validatePatient(
     return "Phone number is required.";
   }
 
+  const phoneDigits = phone.replace(/\D/g, "");
+  if (phoneDigits.length < 7 || phoneDigits.length > 15) {
+    return "Please enter a valid phone number.";
+  }
+
   if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     return "A valid email address is required.";
   }

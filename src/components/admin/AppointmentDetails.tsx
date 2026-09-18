@@ -102,7 +102,7 @@ function AppointmentDetails({
           setRescheduleEnd(data?.appointment_end_time ?? "");
           setNotes(data?.notes ?? "");
 
-          if (data?.inquiry_id) {
+          if (!cancelled && data?.inquiry_id) {
             const related = await getInquiryById(data.inquiry_id);
             if (!cancelled) {
               setInquiry(related);

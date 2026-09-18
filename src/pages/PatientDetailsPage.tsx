@@ -21,8 +21,10 @@ import {
   Field,
   Input,
   SectionHeader,
+  Textarea,
 } from "../components/ui";
 import { formatPrice } from "../lib/formatPrice";
+import { todayLocalString } from "../lib/dates";
 import { canTransitionInquiry } from "../lib/workflow";
 import { AppointmentStatusBadge } from "../components/admin/appointmentPrimitives";
 import { InquiryStatusBadge } from "../components/admin/primitives";
@@ -60,6 +62,7 @@ function DetailRow({
 function PatientDetailsPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const today = todayLocalString();
 
   const [history, setHistory] = useState<PatientHistoryData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -156,8 +159,15 @@ function PatientDetailsPage() {
   }, [currentInquiry]);
 
   async function loadHistory() {
-    const data = await getPatientHistory(id ?? "");
-    setHistory(data);
+    setActionError(null);
+
+    try {
+      const data = await getPatientHistory(id ?? "");
+      setHistory(data);
+    } catch (err) {
+      console.error("Unable to refresh patient details:", err);
+      setActionError("Unable to refresh patient details. Please try again.");
+    }
   }
 
   function startEditing() {
@@ -451,7 +461,7 @@ function PatientDetailsPage() {
                     htmlFor="detail-notes"
                     hint="Administrative notes shown to staff only."
                   >
-                    <Input
+                    <Textarea
                       id="detail-notes"
                       value={notes}
                       onChange={(event) =>
@@ -722,6 +732,7 @@ function PatientDetailsPage() {
                           id="confirm-date"
                           type="date"
                           value={scheduleDate}
+                          min={today}
                           onChange={(event) =>
                             setScheduleDate(event.target.value)
                           }

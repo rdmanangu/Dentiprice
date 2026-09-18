@@ -1,7 +1,6 @@
 import { supabase } from "../lib/supabase";
 import type {
   Appointment,
-  AppointmentItem,
   AppointmentStatus,
   AppointmentWithDetails,
 } from "../types/appointment";
@@ -228,27 +227,4 @@ export async function updateAppointmentNotes(
   }
 
   return data as Appointment;
-}
-
-// ─────────────────────────────────────────────
-// GET APPOINTMENT ITEMS (standalone)
-// Optional: used when a standalone list is needed
-// without re-fetching the whole appointment.
-// ─────────────────────────────────────────────
-
-export async function getAppointmentItems(
-  appointmentId: string
-): Promise<AppointmentItem[]> {
-  const { data, error } = await supabase
-    .from("appointment_items")
-    .select("*")
-    .eq("appointment_id", appointmentId)
-    .order("created_at", { ascending: true });
-
-  if (error) {
-    console.error("Get appointment items error:", error);
-    throw error;
-  }
-
-  return (data ?? []) as AppointmentItem[];
 }

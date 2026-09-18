@@ -115,8 +115,20 @@ function SchedulingPage() {
   }, []);
 
   useEffect(() => {
-    loadAllAppointments();
-  }, [loadAllAppointments]);
+    // loading/error already start in their initial state; setState only in
+    // async callbacks so the effect body performs no synchronous updates.
+    getAppointments()
+      .then((data) => {
+        setAppointments(data);
+      })
+      .catch((err) => {
+        console.error(err);
+        setError("Unable to load appointments.");
+      })
+      .finally(() => {
+        setLoading(false);
+      });
+  }, []);
 
   function handleStatusUpdated(
     updated: AppointmentWithDetails
@@ -132,24 +144,32 @@ function SchedulingPage() {
     loadAllAppointments();
   }
 
-  function handleRefreshCalendar(startDate: string, endDate: string) {
-    getAppointmentsByDateRange(startDate, endDate)
-      .then((data) => {
-        setAppointments((current) => {
-          const existing = new Map(current.map((a) => [a.id, a]));
-          for (const appt of data) {
-            existing.set(appt.id, appt);
-          }
-          return Array.from(existing.values()).sort((a, b) =>
-            a.appointment_date === b.appointment_date
-              ? a.appointment_start_time.localeCompare(b.appointment_start_time)
-              : a.appointment_date.localeCompare(b.appointment_date)
-          );
+  const handleRefreshCalendar = useCallback(
+    (startDate: string, endDate: string) => {
+      getAppointmentsByDateRange(startDate, endDate)
+        .then((data) => {
+          setAppointments((current) => {
+            const existing = new Map(current.map((a) => [a.id, a]));
+            for (const appt of data) {
+              existing.set(appt.id, appt);
+            }
+            return Array.from(existing.values()).sort((a, b) =>
+              a.appointment_date === b.appointment_date
+                ? a.appointment_start_time.localeCompare(b.appointment_start_time)
+                : a.appointment_date.localeCompare(b.appointment_date)
+            );
+          });
+        })
+        .catch((err) => {
+          console.error(err);
         });
-      })
-      .catch((err) => {
-        console.error(err);
-      });
+    },
+    []
+  );
+
+  function handleViewUpcomingAppointments() {
+    setViewMode("list");
+    setDateFilter("future");
   }
 
   // ─────────────────────────────────────────────
@@ -224,6 +244,7 @@ function SchedulingPage() {
             <SchedulingDashboard
               appointments={appointments}
               onSelectAppointment={setSelectedAppointment}
+              onViewUpcoming={handleViewUpcomingAppointments}
             />
           )}
         </div>

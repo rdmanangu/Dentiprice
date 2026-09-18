@@ -1,43 +1,21 @@
 import type { AppointmentWithDetails } from "../../types/appointment";
-import { Card } from "../ui";
-import { Button } from "../ui";
+import { Card, Button } from "../ui";
 import { AppointmentStatusBadge } from "./appointmentPrimitives";
-
-function todayDateString(): string {
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = String(now.getMonth() + 1).padStart(2, "0");
-  const day = String(now.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
-}
-
-function formatTime(time: string): string {
-  const [h, m] = time.split(":");
-  const hour = parseInt(h, 10);
-  const suffix = hour >= 12 ? "PM" : "AM";
-  const display = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
-  return `${display}:${m} ${suffix}`;
-}
-
-function formatShortDate(dateStr: string): string {
-  const date = new Date(dateStr + "T00:00:00");
-  return date.toLocaleDateString("en-US", {
-    weekday: "short",
-    month: "short",
-    day: "numeric",
-  });
-}
+import { todayLocalString } from "../../lib/dates";
+import { formatShortDate, formatTime12 } from "../../lib/patientDisplay";
 
 type SchedulingDashboardProps = {
   appointments: AppointmentWithDetails[];
   onSelectAppointment: (id: string) => void;
+  onViewUpcoming: () => void;
 };
 
 export function SchedulingDashboard({
   appointments,
   onSelectAppointment,
+  onViewUpcoming,
 }: SchedulingDashboardProps) {
-  const today = todayDateString();
+  const today = todayLocalString();
 
   const todayAppts = appointments.filter(
     (a) => a.appointment_date === today
@@ -126,8 +104,8 @@ export function SchedulingDashboard({
                     {appt.patient?.full_name ?? "Unknown patient"}
                   </p>
                   <p className="mt-1 text-sm text-slate-500">
-                    {formatTime(appt.appointment_start_time)} –{" "}
-                    {formatTime(appt.appointment_end_time)}
+                    {formatTime12(appt.appointment_start_time)} –{" "}
+                    {formatTime12(appt.appointment_end_time)}
                   </p>
                   {(appt.appointment_items ?? []).length > 0 && (
                     <p className="mt-1 text-xs text-slate-400">
@@ -169,8 +147,8 @@ export function SchedulingDashboard({
                   </p>
                   <p className="mt-1 text-sm text-slate-500">
                     {formatShortDate(appt.appointment_date)} ·{" "}
-                    {formatTime(appt.appointment_start_time)} –{" "}
-                    {formatTime(appt.appointment_end_time)}
+                    {formatTime12(appt.appointment_start_time)} –{" "}
+                    {formatTime12(appt.appointment_end_time)}
                   </p>
                   {(appt.appointment_items ?? []).length > 0 && (
                     <p className="mt-1 text-xs text-slate-400">
@@ -190,7 +168,7 @@ export function SchedulingDashboard({
           <div className="mt-3 text-center">
             <Button
               variant="ghost"
-              onClick={() => {}}
+              onClick={onViewUpcoming}
               className="text-sm text-slate-500"
             >
               {upcomingAppts.length - 7} more upcoming

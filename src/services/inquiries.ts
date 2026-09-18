@@ -38,7 +38,6 @@ export async function createInquiry(
     totalPrice,
     preferredDate,
     preferredTimeSlot,
-    patientId,
   } = input;
 
   // Build the inquiry_items payload.
@@ -71,7 +70,6 @@ export async function createInquiry(
       p_preferred_date: preferredDate,
       p_preferred_time_slot: preferredTimeSlot,
       p_items: items,
-      ...(patientId ? { p_patient_id: patientId } : {}),
     }
   );
 

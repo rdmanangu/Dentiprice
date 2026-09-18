@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import type { Patient, PatientListItem } from "../types/patient";
 import type { Procedure } from "../types/procedure";
 import { listPatients } from "../services/patients";
@@ -115,7 +115,7 @@ function pageItems(current: number, total: number): (number | "…")[] {
 
 function exportPatients(rows: PatientListItem[]) {
   const escape = (value: string | number | null | undefined) =>
-    `"${String(value ?? "").replace(/"/g, '""')}"`;
+    `"${String(value ?? "").replace(/\r?\n/g, " ").replace(/"/g, '""')}"`;
 
   const header = [
     "Patient",
@@ -170,13 +170,28 @@ function exportPatients(rows: PatientListItem[]) {
 
 function PatientsPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+
+  const urlSearchTerm = searchParams.get("search") ?? "";
 
   const [patients, setPatients] = useState<PatientListItem[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
 
-  const [searchInput, setSearchInput] = useState("");
-  const [query, setQuery] = useState("");
+  const [searchInput, setSearchInput] = useState(urlSearchTerm);
+  const [query, setQuery] = useState(urlSearchTerm);
+
+  // Deep-links from the dashboard search bar arrive as ?search=... while the
+  // component may already be mounted, so sync the local state to the URL term
+  // during render (React's recommended pattern for prop->state adjustment).
+  const [syncedSearchTerm, setSyncedSearchTerm] = useState(urlSearchTerm);
+
+  if (urlSearchTerm !== syncedSearchTerm) {
+    setSyncedSearchTerm(urlSearchTerm);
+    setSearchInput(urlSearchTerm);
+    setQuery(urlSearchTerm);
+    setPage(1);
+  }
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

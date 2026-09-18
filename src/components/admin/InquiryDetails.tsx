@@ -15,6 +15,8 @@ import {
 import { getAppointmentByInquiryId } from "../../services/appointments";
 import { Button, Field, Input, Modal, Select } from "../ui";
 import { formatPrice } from "../../lib/formatPrice";
+import { todayLocalString } from "../../lib/dates";
+import { formatLongDate, formatTime12 } from "../../lib/patientDisplay";
 import {
   ALLOWED_INQUIRY_TRANSITIONS,
   canTransitionInquiry,
@@ -58,6 +60,8 @@ function InquiryDetails({
   onClose,
   onStatusUpdated,
 }: InquiryDetailsProps) {
+  const today = todayLocalString();
+
   const [items, setItems] = useState<InquiryItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -372,7 +376,7 @@ function InquiryDetails({
             <div className="rounded-control border border-border bg-bg p-4">
               <p className="text-xs text-slate-500">Preferred date</p>
               <p className="mt-1 font-medium text-ink">
-                {inquiry.preferred_date}
+                {formatLongDate(inquiry.preferred_date)}
               </p>
             </div>
 
@@ -402,15 +406,15 @@ function InquiryDetails({
               <div className="rounded-control border border-border bg-bg p-4">
                 <p className="text-xs text-slate-500">Date</p>
                 <p className="mt-1 font-medium text-ink">
-                  {relatedAppointment.appointment_date}
+                  {formatLongDate(relatedAppointment.appointment_date)}
                 </p>
               </div>
 
               <div className="rounded-control border border-border bg-bg p-4">
                 <p className="text-xs text-slate-500">Time</p>
                 <p className="mt-1 font-medium text-ink">
-                  {relatedAppointment.appointment_start_time} –{" "}
-                  {relatedAppointment.appointment_end_time}
+                  {formatTime12(relatedAppointment.appointment_start_time)} –{" "}
+                  {formatTime12(relatedAppointment.appointment_end_time)}
                 </p>
               </div>
             </div>
@@ -456,6 +460,7 @@ function InquiryDetails({
                   id="appointment-date"
                   type="date"
                   value={scheduleDate}
+                  min={today}
                   onChange={(event) =>
                     setScheduleDate(event.target.value)
                   }

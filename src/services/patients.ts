@@ -1,4 +1,5 @@
 import { supabase } from "../lib/supabase";
+import { todayLocalString } from "../lib/dates";
 import type {
   Patient,
   PatientListItem,
@@ -22,18 +23,17 @@ import type {
 
 // ─────────────────────────────────────────────
 // PHONE NORMALIZATION
-// Strips non-digit characters, preserves
-// leading + if present.
+// Keeps only digits, matching the database-level
+// unique/history normalization
+// (regexp_replace(phone, '[^0-9]', '', 'g')). A
+// leading "+" is NOT preserved — otherwise a
+// "+639..." value stored today would never match a
+// "639..." lookup because the DB comparison happens
+// on the already-normalized value.
 // ─────────────────────────────────────────────
 
 function normalizePhone(phone: string): string {
-  const trimmed = phone.trim();
-
-  if (trimmed.startsWith("+")) {
-    return "+" + trimmed.slice(1).replace(/\D/g, "");
-  }
-
-  return trimmed.replace(/\D/g, "");
+  return phone.trim().replace(/\D/g, "");
 }
 
 // ─────────────────────────────────────────────
@@ -43,22 +43,6 @@ function normalizePhone(phone: string): string {
 
 function normalizeEmail(email: string): string {
   return email.trim().toLowerCase();
-}
-
-// ─────────────────────────────────────────────
-// LOCAL DATE HELPER
-// Produces a local-timezone date string (YYYY-MM-DD)
-// consistent with the scheduling implementation.
-// Never use toISOString here, which can shift the
-// day due to UTC conversion.
-// ─────────────────────────────────────────────
-
-function todayLocalString(): string {
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = String(now.getMonth() + 1).padStart(2, "0");
-  const day = String(now.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
 }
 
 // ─────────────────────────────────────────────
@@ -226,33 +210,6 @@ export async function createPatient(
   }
 
   return data;
-}
-
-// ─────────────────────────────────────────────
-// FIND OR CREATE PATIENT
-// Uses the matching strategy to find an existing
-// patient. Creates one if none found.
-// ─────────────────────────────────────────────
-
-export async function findOrCreatePatient(
-  fullName: string,
-  phone: string,
-  email: string
-): Promise<Patient> {
-  const existing = await findPatientByContact(
-    phone,
-    email
-  );
-
-  if (existing) {
-    return existing;
-  }
-
-  return createPatient({
-    full_name: fullName,
-    phone,
-    email,
-  });
 }
 
 // ─────────────────────────────────────────────

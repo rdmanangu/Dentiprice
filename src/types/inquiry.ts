@@ -31,6 +31,5 @@ export type CreateInquiryInput = {
   totalPrice: number;
   preferredDate: string;
   preferredTimeSlot: string;
-  patientId?: string | null;
 };
 

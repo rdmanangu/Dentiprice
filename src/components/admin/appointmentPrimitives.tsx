@@ -18,7 +18,8 @@ export function AppointmentStatusBadge({
   status: AppointmentStatus;
 }) {
   const label =
-    status.charAt(0).toUpperCase() + status.slice(1);
+    status.charAt(0).toUpperCase() +
+    status.slice(1).replace(/_/g, " ");
 
   return (
     <Badge tone={statusTones[status]}>{label}</Badge>

@@ -42,15 +42,3 @@ export function ErrorAlert({
 }: ErrorAlertProps) {
   return <ErrorState className={className}>{children}</ErrorState>;
 }
-
-type LoadingLineProps = {
-  children: React.ReactNode;
-  className?: string;
-};
-
-export function LoadingLine({
-  children,
-  className = "",
-}: LoadingLineProps) {
-  return <p className={`text-sm text-slate-500 ${className}`} role="status">{children}</p>;
-}

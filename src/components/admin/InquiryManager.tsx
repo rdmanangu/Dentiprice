@@ -12,6 +12,7 @@ import {
 import InquiryDetails from "./InquiryDetails";
 import { ConfirmDialog, DataTable, SectionHeader } from "../ui";
 import { formatPrice } from "../../lib/formatPrice";
+import { inquiryRef } from "../../lib/patientDisplay";
 import {
   ALLOWED_INQUIRY_TRANSITIONS,
   canTransitionInquiry,
@@ -251,7 +252,7 @@ function InquiryManager({
             render: (inquiry) => (
               <>
                 <p className="font-medium text-ink">{inquiry.patient_name}</p>
-                <p className="text-xs text-slate-500">{inquiry.id}</p>
+                <p className="text-xs text-slate-500">{inquiryRef(inquiry.id)}</p>
               </>
             ),
           },

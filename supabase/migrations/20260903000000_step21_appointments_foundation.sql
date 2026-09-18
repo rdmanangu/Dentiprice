@@ -33,54 +33,13 @@ CREATE TABLE IF NOT EXISTS public.appointment_items (
 );
 
 -- 3. Foreign key guards (ADD CONSTRAINT IF NOT EXISTS via DO block)
-DO $$
-BEGIN
-  IF NOT EXISTS (
-    SELECT 1 FROM pg_constraint
-    WHERE conrelid = 'public.appointments'::regclass
-      AND conname = 'fk_appointments_patient'
-  ) THEN
-    ALTER TABLE public.appointments
-      ADD CONSTRAINT fk_appointments_patient
-      FOREIGN KEY (patient_id)
-      REFERENCES public.patients(id)
-      ON DELETE RESTRICT;
-  END IF;
-END;
-$$;
-
-DO $$
-BEGIN
-  IF NOT EXISTS (
-    SELECT 1 FROM pg_constraint
-    WHERE conrelid = 'public.appointments'::regclass
-      AND conname = 'fk_appointments_inquiry'
-  ) THEN
-    ALTER TABLE public.appointments
-      ADD CONSTRAINT fk_appointments_inquiry
-      FOREIGN KEY (inquiry_id)
-      REFERENCES public.inquiries(id)
-      ON DELETE SET NULL;
-  END IF;
-END;
-$$;
-
-DO $$
-BEGIN
-  IF NOT EXISTS (
-    SELECT 1 FROM pg_constraint
-    WHERE conrelid = 'public.appointment_items'::regclass
-      AND conname = 'fk_appointment_items_appointment'
-  ) THEN
-    ALTER TABLE public.appointment_items
-      ADD CONSTRAINT fk_appointment_items_appointment
-      FOREIGN KEY (appointment_id)
-      REFERENCES public.appointments(id)
-      ON DELETE CASCADE;
-  END IF;
-END;
-$$;
-
+-- NOTE: patient_id, inquiry_id, and appointment_id already have inline
+-- REFERENCES above (auto-named appointments_patient_id_fkey,
+-- appointments_inquiry_id_fkey, appointment_items_appointment_id_fkey).
+-- STEP 29 + this file's companion edit remove the duplicate explicitly-named
+-- copies so only the canonical relationships remain. Only the optional
+-- procedure/add-on relationships are declared here because they are nullable
+-- columns without an inline REFERENCES.
 DO $$
 BEGIN
   IF NOT EXISTS (

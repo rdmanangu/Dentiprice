@@ -19,6 +19,19 @@ function todayLocalString(): string {
   return `${y}-${m}-${d}`;
 }
 
+// Adds a number of days to a YYYY-MM-DD string using LOCAL time.
+// new Date("YYYY-MM-DD") in JS parses as UTC midnight, which can land on the
+// previous calendar day in timezones behind UTC. Appending "T00:00:00" keeps
+// the arithmetic in the user's local timezone.
+function addDays(dateStr: string, days: number): string {
+  const date = new Date(`${dateStr}T00:00:00`);
+  date.setDate(date.getDate() + days);
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
+
 // ─────────────────────────────────────────────
 // AUTHENTICATION GUARD
 // The dashboard must never query PostgREST without a live session.
@@ -90,7 +103,6 @@ export type DashboardSummary = {
 export type DashboardData = {
   summary: DashboardSummary;
   upcomingAppointments: AppointmentWithDetails[];
-  pendingInquiries: Inquiry[];
   recentInquiries: Inquiry[];
   procedureNameMap: Record<string, string>;
 };
@@ -121,24 +133,16 @@ export async function getDashboardData(): Promise<DashboardData> {
     )
   `;
 
-  const upcomingFrom = new Date(today);
-  upcomingFrom.setDate(upcomingFrom.getDate() + 1);
-  const upcomingFromStr = `${upcomingFrom.getFullYear()}-${String(
-    upcomingFrom.getMonth() + 1
-  ).padStart(2, "0")}-${String(upcomingFrom.getDate()).padStart(2, "0")}`;
-
-  const upcomingTo = new Date(today);
-  upcomingTo.setDate(upcomingTo.getDate() + 7);
-  const upcomingToStr = `${upcomingTo.getFullYear()}-${String(
-    upcomingTo.getMonth() + 1
-  ).padStart(2, "0")}-${String(upcomingTo.getDate()).padStart(2, "0")}`;
+  const upcomingFromStr = addDays(today, 1);
+  const upcomingToStr = addDays(today, 7);
 
   const [
     upcomingRes,
-    pendingRes,
     recentRes,
     patientCountRes,
     procedureCountRes,
+    pendingCountRes,
+    upcomingCountRes,
   ] = await Promise.all([
     // Upcoming appointments within the next 7 days (exclude cancelled / completed)
     supabase
@@ -150,13 +154,6 @@ export async function getDashboardData(): Promise<DashboardData> {
       .order("appointment_date", { ascending: true })
       .order("appointment_start_time", { ascending: true })
       .limit(10),
-    // Pending inquiries: latest first
-    supabase
-      .from("inquiries")
-      .select("*")
-      .eq("status", "pending")
-      .order("created_at", { ascending: false })
-      .limit(5),
     // Recent inquiries: all statuses, latest first
     supabase
       .from("inquiries")
@@ -171,14 +168,27 @@ export async function getDashboardData(): Promise<DashboardData> {
     supabase
       .from("procedures")
       .select("id", { count: "exact", head: true }),
+    // Pending inquiries count (head-only, EXACT — not derived from a limited list)
+    supabase
+      .from("inquiries")
+      .select("id", { count: "exact", head: true })
+      .eq("status", "pending"),
+    // Upcoming appointments count (head-only, EXACT — not derived from a limited list)
+    supabase
+      .from("appointments")
+      .select("id", { count: "exact", head: true })
+      .gte("appointment_date", upcomingFromStr)
+      .lte("appointment_date", upcomingToStr)
+      .not("status", "in", "('cancelled','completed')"),
   ]);
 
   for (const res of [
     upcomingRes,
-    pendingRes,
     recentRes,
     patientCountRes,
     procedureCountRes,
+    pendingCountRes,
+    upcomingCountRes,
   ]) {
     if (res.error) {
       // A 401 here means the JWT attached to the request was rejected mid-flight
@@ -200,11 +210,12 @@ export async function getDashboardData(): Promise<DashboardData> {
   }
 
   const upcomingAppointments = (upcomingRes.data ?? []) as AppointmentWithDetails[];
-  const pendingInquiries = (pendingRes.data ?? []) as Inquiry[];
   const recentInquiries = (recentRes.data ?? []) as Inquiry[];
 
   const totalPatients = patientCountRes.count ?? 0;
   const totalTreatments = procedureCountRes.count ?? 0;
+  const pendingInquiries = pendingCountRes.count ?? 0;
+  const upcomingCount = upcomingCountRes.count ?? 0;
 
   // Build a procedure ID → name map for the recent inquiries table.
   const procedureIds = Array.from(
@@ -230,13 +241,12 @@ export async function getDashboardData(): Promise<DashboardData> {
 
   return {
     summary: {
-      pendingInquiries: pendingInquiries.length,
-      upcomingAppointments: upcomingAppointments.length,
+      pendingInquiries,
+      upcomingAppointments: upcomingCount,
       totalPatients,
       totalTreatments,
     },
     upcomingAppointments,
-    pendingInquiries,
     recentInquiries,
     procedureNameMap,
   };

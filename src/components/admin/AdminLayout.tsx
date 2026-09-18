@@ -48,8 +48,13 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
   const navigate = useNavigate();
 
   async function handleLogout() {
-    await supabase.auth.signOut();
-    navigate("/admin/login");
+    try {
+      await supabase.auth.signOut();
+    } catch (err) {
+      console.error("Sign out error:", err);
+    } finally {
+      navigate("/admin/login");
+    }
   }
 
   return (
