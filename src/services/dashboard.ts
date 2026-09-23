@@ -1,6 +1,7 @@
 import { supabase } from "../lib/supabase";
 import type { AppointmentWithDetails } from "../types/appointment";
 import type { Inquiry } from "../types/inquiry";
+import type { InquiryItemSnapshot } from "../types/patient";
 
 // ─────────────────────────────────────────────
 // LOCAL DATE HELPERS
@@ -100,11 +101,17 @@ export type DashboardSummary = {
   totalTreatments: number;
 };
 
+// A recent inquiry as shown on the dashboard, including its line-item
+// snapshots so the treatment column reflects the actual consultation
+// contents rather than relying on a non-schema column.
+export type RecentInquiry = Inquiry & {
+  inquiry_items: InquiryItemSnapshot[];
+};
+
 export type DashboardData = {
   summary: DashboardSummary;
   upcomingAppointments: AppointmentWithDetails[];
-  recentInquiries: Inquiry[];
-  procedureNameMap: Record<string, string>;
+  recentInquiries: RecentInquiry[];
 };
 
 // ─────────────────────────────────────────────
@@ -144,20 +151,25 @@ export async function getDashboardData(): Promise<DashboardData> {
     pendingCountRes,
     upcomingCountRes,
   ] = await Promise.all([
-    // Upcoming appointments within the next 7 days (exclude cancelled / completed)
+    // Upcoming appointments within the next 7 days (active statuses only —
+    // scheduled and confirmed; cancelled, completed, and no_show are not
+    // upcoming).
     supabase
       .from("appointments")
       .select(appointmentSelect)
       .gte("appointment_date", upcomingFromStr)
       .lte("appointment_date", upcomingToStr)
-      .not("status", "in", "('cancelled','completed')")
+      .in("status", ["scheduled", "confirmed"])
       .order("appointment_date", { ascending: true })
       .order("appointment_start_time", { ascending: true })
       .limit(10),
-    // Recent inquiries: all statuses, latest first
+    // Recent inquiries: all statuses, latest first, with their item snapshots.
     supabase
       .from("inquiries")
-      .select("*")
+      .select(
+        `*,
+         inquiry_items(id, procedure_id, add_on_id, item_name, item_price)`
+      )
       .order("created_at", { ascending: false })
       .limit(8),
     // Total patients count
@@ -179,7 +191,7 @@ export async function getDashboardData(): Promise<DashboardData> {
       .select("id", { count: "exact", head: true })
       .gte("appointment_date", upcomingFromStr)
       .lte("appointment_date", upcomingToStr)
-      .not("status", "in", "('cancelled','completed')"),
+      .in("status", ["scheduled", "confirmed"]),
   ]);
 
   for (const res of [
@@ -210,34 +222,12 @@ export async function getDashboardData(): Promise<DashboardData> {
   }
 
   const upcomingAppointments = (upcomingRes.data ?? []) as AppointmentWithDetails[];
-  const recentInquiries = (recentRes.data ?? []) as Inquiry[];
+  const recentInquiries = (recentRes.data ?? []) as RecentInquiry[];
 
   const totalPatients = patientCountRes.count ?? 0;
   const totalTreatments = procedureCountRes.count ?? 0;
   const pendingInquiries = pendingCountRes.count ?? 0;
   const upcomingCount = upcomingCountRes.count ?? 0;
-
-  // Build a procedure ID → name map for the recent inquiries table.
-  const procedureIds = Array.from(
-    new Set(
-      recentInquiries.flatMap((inquiry) => inquiry.selected_procedure_ids ?? [])
-    )
-  );
-
-  let procedureNameMap: Record<string, string> = {};
-
-  if (procedureIds.length > 0) {
-    const { data: procedureRows } = await supabase
-      .from("procedures")
-      .select("id, name")
-      .in("id", procedureIds);
-
-    if (procedureRows) {
-      procedureNameMap = Object.fromEntries(
-        procedureRows.map((row) => [row.id, row.name])
-      );
-    }
-  }
 
   return {
     summary: {
@@ -248,6 +238,5 @@ export async function getDashboardData(): Promise<DashboardData> {
     },
     upcomingAppointments,
     recentInquiries,
-    procedureNameMap,
   };
 }

@@ -22,7 +22,9 @@ export function SchedulingDashboard({
   );
 
   const upcomingAppts = appointments.filter(
-    (a) => a.appointment_date > today
+    (a) =>
+      a.appointment_date > today &&
+      (a.status === "scheduled" || a.status === "confirmed")
   );
 
   const todayScheduled = todayAppts.filter(

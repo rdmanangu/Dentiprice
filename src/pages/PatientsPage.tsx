@@ -13,7 +13,6 @@ import {
 import { formatPrice } from "../lib/formatPrice";
 import {
   IconDownload,
-  IconNotifications,
   IconSearch,
 } from "../components/admin/icons";
 import {
@@ -331,19 +330,6 @@ function PatientsPage() {
         as="h1"
         title="Patients & Inquiries"
         subtitle="Manage patient records, inquiries, and appointment status"
-        actions={
-          <button
-            type="button"
-            aria-label="Notifications"
-            className="relative inline-flex h-10 w-10 items-center justify-center rounded-control border border-border bg-surface text-ink transition-colors hover:bg-bg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
-          >
-            <IconNotifications className="h-5 w-5" />
-            <span
-              className="absolute right-2 top-2 h-2 w-2 rounded-pill bg-cta ring-2 ring-surface"
-              aria-hidden="true"
-            />
-          </button>
-        }
       />
 
       {/* FILTER PANEL */}

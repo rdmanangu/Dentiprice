@@ -44,8 +44,50 @@ const navItems: {
 // (overlay) sidebars.
 // ─────────────────────────────────────────────
 
+function initialsOf(name: string): string {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+
+  if (parts.length === 0) {
+    return "AD";
+  }
+
+  if (parts.length === 1) {
+    return parts[0].slice(0, 2).toUpperCase();
+  }
+
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+}
+
 function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
   const navigate = useNavigate();
+
+  const [adminName, setAdminName] = useState("Admin");
+  const [adminInitials, setAdminInitials] = useState("AD");
+
+  useEffect(() => {
+    let cancelled = false;
+
+    supabase.auth
+      .getSession()
+      .then(({ data, error }) => {
+        if (cancelled || error || !data.session) {
+          return;
+        }
+
+        const metaName = data.session.user.user_metadata?.["full_name"];
+        const display =
+          typeof metaName === "string" && metaName.trim()
+            ? metaName.trim()
+            : data.session.user.email || "Admin";
+
+        setAdminName(display);
+        setAdminInitials(initialsOf(display));
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   async function handleLogout() {
     try {
@@ -109,11 +151,11 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
       <div className="border-t border-sidebar-border px-4 py-4">
         <div className="flex items-center gap-3">
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-pill bg-cta text-sm font-bold text-white">
-            DR
+            {adminInitials}
           </div>
           <div className="min-w-0">
             <p className="truncate text-sm font-semibold text-sidebar-text-active">
-              Dr. Reyes
+              {adminName}
             </p>
             <p className="text-xs text-sidebar-text">Administrator</p>
           </div>

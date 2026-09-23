@@ -14,6 +14,7 @@ const PatientsPage = lazy(() => import("./pages/PatientsPage"));
 const PatientDetailsPage = lazy(() => import("./pages/PatientDetailsPage"));
 const SchedulingPage = lazy(() => import("./pages/SchedulingPage"));
 const TreatmentsPage = lazy(() => import("./pages/TreatmentsPage"));
+const NotFound = lazy(() => import("./pages/NotFound"));
 
 function App() {
   return (
@@ -58,7 +59,10 @@ function App() {
           <Route path="patients/:id" element={<PatientDetailsPage />} />
           <Route path="scheduling" element={<SchedulingPage />} />
           <Route path="treatments" element={<TreatmentsPage />} />
+          <Route path="*" element={<NotFound />} />
         </Route>
+
+        <Route path="*" element={<NotFound />} />
       </Routes>
       </Suspense>
     </BrowserRouter>

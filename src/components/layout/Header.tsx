@@ -11,13 +11,20 @@ function Header() {
           Denti<span className="text-cta">Price</span>
         </Link>
 
-        <nav aria-label="Main navigation">
+        <nav aria-label="Main navigation" className="flex items-center gap-2">
           <a
             href="#procedures"
             className="rounded-lg px-4 py-2.5 text-sm font-medium text-slate-600 transition-colors hover:bg-bg hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
           >
             Treatments
           </a>
+
+          <Link
+            to="/admin/login"
+            className="rounded-lg border border-border px-3 py-2 text-xs font-medium text-slate-400 transition-colors hover:bg-bg hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+          >
+            Admin Login
+          </Link>
         </nav>
       </div>
     </header>

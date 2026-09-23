@@ -11,6 +11,7 @@ import {
   getDashboardData,
   isDashboardAuthError,
   type DashboardData,
+  type RecentInquiry,
 } from "../services/dashboard";
 import type { AppointmentWithDetails } from "../types/appointment";
 import type { Inquiry } from "../types/inquiry";
@@ -61,24 +62,18 @@ function dateChipParts(dateStr: string) {
   };
 }
 
-function treatmentLabel(
-  inquiry: Inquiry,
-  procedureNames: Record<string, string>
-): string {
-  const ids = inquiry.selected_procedure_ids ?? [];
-  const names = ids
-    .map((id) => procedureNames[id])
-    .filter((name): name is string => Boolean(name));
+function treatmentLabel(inquiry: RecentInquiry): string {
+  const items = inquiry.inquiry_items ?? [];
 
-  if (names.length === 0) {
+  if (items.length === 0) {
     return "Consultation";
   }
 
-  if (names.length === 1) {
-    return names[0];
+  if (items.length === 1) {
+    return items[0].item_name;
   }
 
-  return `${names[0]} +${names.length - 1} more`;
+  return `${items[0].item_name} +${items.length - 1} more`;
 }
 
 // ─────────────────────────────────────────────
@@ -195,8 +190,7 @@ function DashboardContent({
   onViewAppointment: (id: string) => void;
   onViewInquiry: (inquiry: Inquiry) => void;
 }) {
-  const { summary, recentInquiries, upcomingAppointments, procedureNameMap } =
-    data;
+  const { summary, recentInquiries, upcomingAppointments } = data;
 
   return (
     <div className="space-y-6">
@@ -285,7 +279,7 @@ function DashboardContent({
                 header: "Treatment",
                 render: (inquiry) => (
                   <span className="whitespace-nowrap text-sm text-slate-600">
-                    {treatmentLabel(inquiry, procedureNameMap)}
+                    {treatmentLabel(inquiry)}
                   </span>
                 ),
               },

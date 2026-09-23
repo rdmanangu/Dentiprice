@@ -533,10 +533,6 @@ function PatientDetailsPage() {
                       <DetailRow label="Birthdate">
                         {formatLongDate(history.patient.date_of_birth)}
                       </DetailRow>
-
-                      <DetailRow label="Address">—</DetailRow>
-
-                      <DetailRow label="Allergies">—</DetailRow>
                     </div>
                   </div>
 

@@ -12,7 +12,6 @@ export interface Inquiry {
   status: InquiryStatus;
   created_at: string;
   updated_at: string;
-  selected_procedure_ids: string[];
 }
 
 // Type for the input expected by the RPC function
