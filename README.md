@@ -6,8 +6,7 @@ DentiPrice is a dental price estimation and consultation management web applicat
 
 Public repository: https://github.com/rdmanangu/Dentiprice
 
-Live app: https://YOUR-LIVE-APP-URL
-
+Live app: https://dentiprice.onrender.com
 ---
 
 ## What it is
