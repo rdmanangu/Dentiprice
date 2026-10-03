@@ -6,9 +6,8 @@ function Header() {
       <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
         <Link
           to="/"
-          className="flex items-center gap-2 rounded-lg text-xl font-bold tracking-tight text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+          className="text-2xl font-bold text-ink transition-colors hover:text-cta focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
         >
-          <img src="/src/assets/icon.png" alt="" className="h-6 w-6 shrink-0" />
           <span>
             Denti<span className="text-cta">Price</span>
           </span>
