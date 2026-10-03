@@ -165,6 +165,25 @@ The administrator must have the appropriate administrator role in the Supabase a
 
 The application checks the authenticated user's administrator role before allowing access to protected administrative functionality.
 
+Creating an account alone is not enough. A new Supabase user has empty `app_metadata`, so the
+application treats it as a signed-in non-admin and returns it to the login page. Grant the role
+explicitly, per account, from the Supabase SQL editor:
+
+```sql
+-- Grant admin to one specific account. Replace the email, and only
+-- run this for a staff member you have approved.
+update auth.users
+set raw_app_meta_data = raw_app_meta_data || '{"role":"admin"}'::jsonb
+where email = 'staff@clinic.com';
+```
+
+The same value can be set in the Supabase dashboard under **Authentication → Users → Edit user →
+User Metadata → app_metadata**. Grant the role this way rather than with `user_metadata`, which is
+writable by the account holder and is not trusted by the Row Level Security policies.
+
+There is no self-service registration in DentiPrice: staff accounts are provisioned by the clinic
+owner, and only accounts holding the admin role can reach the admin panel.
+
 Do not put administrator passwords or private authentication credentials in the repository.
 
 ### 6. Start the development server
