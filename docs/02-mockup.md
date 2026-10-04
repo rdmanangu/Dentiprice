@@ -12,28 +12,26 @@ The mockups cover the main patient and admin screens included in the revised pro
 
 | Screen | Mockup |
 |---|---|
-| Home | [View Home Mockup](assets/home-mockup.png) |
-| Price Estimator | [View Price Estimator Mockup](assets/price-estimator-mockup.png) |
-| Inquiry Form | [View Inquiry Form Mockup](assets/inquiry-form-mockup.png) |
+| Home | [View Home Mockup](assets/home.png) |
+| Price Estimator | [View Price Estimator Mockup](assets/price_estimator.png) |
+| Inquiry Form | [View Inquiry Form Mockup](assets/inquiry_form.png) |
 
 ### Admin Side
 
 | Screen | Mockup |
 |---|---|
-| Admin Dashboard | [View Dashboard Mockup](assets/admin-dashboard-mockup.png) |
-| Inquiries | [View Inquiries Mockup](assets/inquiries-mockup.png) |
-| Patients | [View Patients Mockup](assets/patients-mockup.png) |
-| Appointments | [View Appointments Mockup](assets/appointments-mockup.png) |
-| Schedule | [View Schedule Mockup](assets/schedule-mockup.png) |
-| Treatments & Add-ons | [View Treatments & Add-ons Mockup](assets/treatments-addons-mockup.png) |
+| Admin Dashboard | [View Dashboard Mockup](assets/admin_dashboard.png) |
+| Inquiries | [View Inquiries Mockup](assets/inquiries.png) |
+| Patients | [View Patients Mockup](assets/patients.png) |
+| Appointments | [View Appointments Mockup](assets/appointments.png) |
+| Schedule | [View Schedule Mockup](assets/appointments.png) |
+| Treatments & Add-ons | [View Treatments & Add-ons Mockup](assets/treatments-addons.png) |
 
 ## Empty State
 
 At least one empty state is included in the mockups to show how the application behaves when there is no data to display.
 
 For example, the admin inquiry page can display an empty state when there are no patient inquiries:
-
-![Empty Inquiries State](assets/inquiries-empty-state.png)
 
 The empty state provides a clear message instead of leaving the page blank.
 

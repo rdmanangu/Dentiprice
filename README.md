@@ -496,8 +496,8 @@ npm run lint
 
 ## Presentation
 
-- **Video:** https://drive.google.com/YOUR-VIDEO-LINK
-- **Slides:** https://YOUR-SLIDES-LINK
+- **Video:** https://drive.google.com/file/d/19UyjqHshRitB5XWvFzxs3tRU2H3nTayW/view?usp=drive_link
+- **Slides:** https://docs.google.com/presentation/d/18vAWir6xbZcT3tFdDblDrMCyUFzhCLWE/edit?usp=drive_link&ouid=109011297119006716577&rtpof=true&sd=true
 - **Square image:** Add the project square image to the project folder or provide a public link.
 
 ---
@@ -529,7 +529,7 @@ Detailed AI usage information is available in `AI-USAGE.md`.
 
 Repository link:
 
-https://github.com/YOUR-USERNAME/YOUR-REPO/blob/main/AI-USAGE.md
+https://github.com/rdmanangu/Dentiprice/blob/main/AI-USAGE.md
 
 ---
 
