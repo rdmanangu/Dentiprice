@@ -7,13 +7,15 @@ import { formatShortDate, formatTime12 } from "../../lib/patientDisplay";
 type SchedulingDashboardProps = {
   appointments: AppointmentWithDetails[];
   onSelectAppointment: (id: string) => void;
-  onViewUpcoming: () => void;
+  onViewCalendar?: (date?: string) => void;
+  onScheduleForDate?: (date?: string) => void;
 };
 
 export function SchedulingDashboard({
   appointments,
   onSelectAppointment,
-  onViewUpcoming,
+  onViewCalendar,
+  onScheduleForDate,
 }: SchedulingDashboardProps) {
   const today = todayLocalString();
 
@@ -142,7 +144,16 @@ export function SchedulingDashboard({
           <div className="mt-3 text-center">
             <Button
               variant="ghost"
-              onClick={onViewUpcoming}
+              onClick={() => {
+                if (onViewCalendar) {
+                  const last = todayAndUpcomingAppts[todayAndUpcomingAppts.length - 1];
+                  onViewCalendar(last?.appointment_date);
+                  return;
+                }
+                if (onScheduleForDate) {
+                  onScheduleForDate();
+                }
+              }}
               className="text-sm text-slate-500"
             >
               {todayAndUpcomingAppts.length - 7} more upcoming
