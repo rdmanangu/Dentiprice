@@ -1,5 +1,6 @@
 import { Badge } from "../ui";
 import type { AppointmentStatus } from "../../types/appointment";
+import { appointmentStatusLabel } from "../../lib/appointmentFilters";
 
 const statusTones: Record<
   AppointmentStatus,
@@ -14,14 +15,14 @@ const statusTones: Record<
 
 export function AppointmentStatusBadge({
   status,
+  className = "",
 }: {
   status: AppointmentStatus;
+  className?: string;
 }) {
-  const label =
-    status.charAt(0).toUpperCase() +
-    status.slice(1).replace(/_/g, " ");
-
   return (
-    <Badge tone={statusTones[status]}>{label}</Badge>
+    <Badge tone={statusTones[status]} className={className}>
+      {appointmentStatusLabel(status)}
+    </Badge>
   );
 }

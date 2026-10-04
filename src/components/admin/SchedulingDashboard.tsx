@@ -21,11 +21,20 @@ export function SchedulingDashboard({
     (a) => a.appointment_date === today
   );
 
-  const upcomingAppts = appointments.filter(
-    (a) =>
-      a.appointment_date > today &&
-      (a.status === "scheduled" || a.status === "confirmed")
-  );
+  const todayAndUpcomingAppts = appointments
+    .filter(
+      (a) =>
+        a.appointment_date === today ||
+        (a.appointment_date > today &&
+          (a.status === "scheduled" || a.status === "confirmed"))
+    )
+    .sort((a, b) =>
+      a.appointment_date === b.appointment_date
+        ? a.appointment_start_time.localeCompare(
+            b.appointment_start_time
+          )
+        : a.appointment_date.localeCompare(b.appointment_date)
+    );
 
   const todayScheduled = todayAppts.filter(
     (a) => a.status === "scheduled" || a.status === "confirmed"
@@ -39,7 +48,7 @@ export function SchedulingDashboard({
     (a) => a.status === "cancelled" || a.status === "no_show"
   ).length;
 
-  const nextUpcoming = upcomingAppts.slice(0, 7);
+  const visibleAppointments = todayAndUpcomingAppts.slice(0, 7);
 
   return (
     <div className="space-y-6">
@@ -82,61 +91,24 @@ export function SchedulingDashboard({
         </Card>
       </div>
 
-      {/* TODAY'S APPOINTMENTS */}
+      {/* TODAY & UPCOMING APPOINTMENTS */}
       <section>
         <h3 className="text-lg font-bold text-ink">
-          Today&apos;s schedule
+          Today &amp; upcoming appointments
         </h3>
 
-        {todayAppts.length === 0 ? (
+        <p className="mt-1 text-sm text-slate-500">
+          In order: every appointment dated today whatever its status,
+          followed by later dates that are still scheduled or confirmed.
+        </p>
+
+        {visibleAppointments.length === 0 ? (
           <p className="mt-3 rounded-card border border-border bg-surface p-6 text-sm text-slate-500">
-            No appointments scheduled for today.
+            No appointments for today or later.
           </p>
         ) : (
           <div className="mt-3 space-y-3">
-            {todayAppts.map((appt) => (
-              <button
-                key={appt.id}
-                type="button"
-                onClick={() => onSelectAppointment(appt.id)}
-                className="flex w-full items-center justify-between gap-4 rounded-card border border-border bg-surface p-4 text-left transition-colors hover:bg-bg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
-              >
-                <div className="min-w-0">
-                  <p className="font-medium text-ink">
-                    {appt.patient?.full_name ?? "Unknown patient"}
-                  </p>
-                  <p className="mt-1 text-sm text-slate-500">
-                    {formatTime12(appt.appointment_start_time)} –{" "}
-                    {formatTime12(appt.appointment_end_time)}
-                  </p>
-                  {(appt.appointment_items ?? []).length > 0 && (
-                    <p className="mt-1 text-xs text-slate-400">
-                      {appt.appointment_items[0].item_name}
-                      {(appt.appointment_items?.length ?? 0) > 1 &&
-                        ` +${(appt.appointment_items?.length ?? 0) - 1} more`}
-                    </p>
-                  )}
-                </div>
-                <AppointmentStatusBadge status={appt.status} />
-              </button>
-            ))}
-          </div>
-        )}
-      </section>
-
-      {/* UPCOMING APPOINTMENTS */}
-      <section>
-        <h3 className="text-lg font-bold text-ink">
-          Upcoming appointments
-        </h3>
-
-        {nextUpcoming.length === 0 ? (
-          <p className="mt-3 rounded-card border border-border bg-surface p-6 text-sm text-slate-500">
-            No upcoming appointments.
-          </p>
-        ) : (
-          <div className="mt-3 space-y-3">
-            {nextUpcoming.map((appt) => (
+            {visibleAppointments.map((appt) => (
               <button
                 key={appt.id}
                 type="button"
@@ -166,14 +138,14 @@ export function SchedulingDashboard({
           </div>
         )}
 
-        {upcomingAppts.length > 7 && (
+        {todayAndUpcomingAppts.length > 7 && (
           <div className="mt-3 text-center">
             <Button
               variant="ghost"
               onClick={onViewUpcoming}
               className="text-sm text-slate-500"
             >
-              {upcomingAppts.length - 7} more upcoming
+              {todayAndUpcomingAppts.length - 7} more upcoming
             </Button>
           </div>
         )}

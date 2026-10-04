@@ -127,7 +127,7 @@ function AdminLogin() {
 
               return (
                 <li key={tool.label} className="flex items-center gap-3">
-                  <Icon className="h-[18px] w-[18px] shrink-0 text-[#f2a9bd]" />
+                  <Icon className="h-4.5 w-4.5 shrink-0 text-[#f2a9bd]" />
                   <span className="text-sm text-sidebar-text">
                     {tool.label}
                   </span>

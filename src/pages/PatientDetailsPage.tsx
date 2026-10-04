@@ -54,7 +54,7 @@ function DetailRow({
   return (
     <div>
       <p className="text-xs text-slate-500">{label}</p>
-      <div className="mt-0.5 break-words text-sm text-ink">{children}</div>
+      <div className="mt-0.5 wrap-break-words text-sm text-ink">{children}</div>
     </div>
   );
 }

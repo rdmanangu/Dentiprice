@@ -127,6 +127,25 @@ export async function updateAppointmentStatus(
 
   if (error) {
     console.error("Update appointment status error:", error);
+
+    // The status transition guard trigger raises 23514. Translate it
+    // into the same guidance the UI uses so admins never see a raw
+    // database message.
+    if (error.code === "23514") {
+      throw new Error(
+        "This appointment has reached a final status and can no longer be changed."
+      );
+    }
+
+    if (
+      error.code === "42501" ||
+      error.message.toLowerCase().includes("row-level security")
+    ) {
+      throw new Error(
+        "Permission denied. Your account cannot update this appointment."
+      );
+    }
+
     throw error;
   }
 
@@ -176,6 +195,12 @@ export async function getAppointmentByInquiryId(
 // Updates date and time in a single atomic
 // update. Does not modify patient_id, inquiry_id,
 // appointment_items, or status.
+//
+// Date/time validity (end after start, one appointment
+// per inquiry, admin-only RLS) is enforced by the
+// database; the client additionally blocks obvious
+// conflicts before submitting so the admin gets an
+// immediate, actionable message.
 // ─────────────────────────────────────────────
 
 export async function rescheduleAppointment(
@@ -184,6 +209,16 @@ export async function rescheduleAppointment(
   startTime: string,
   endTime: string
 ): Promise<Appointment> {
+  if (!appointmentDate || !startTime || !endTime) {
+    throw new Error(
+      "Please choose a date, a start time, and an end time."
+    );
+  }
+
+  if (endTime <= startTime) {
+    throw new Error("End time must be after the start time.");
+  }
+
   const { data, error } = await supabase
     .from("appointments")
     .update({
@@ -197,6 +232,24 @@ export async function rescheduleAppointment(
 
   if (error) {
     console.error("Reschedule appointment error:", error);
+
+    // Surface a readable reason for the known database
+    // constraints instead of a raw driver message.
+    if (error.code === "23514") {
+      throw new Error(
+        "The new time is not valid. End time must be after the start time."
+      );
+    }
+
+    if (
+      error.code === "42501" ||
+      error.message.toLowerCase().includes("row-level security")
+    ) {
+      throw new Error(
+        "Permission denied. Your account cannot reschedule this appointment."
+      );
+    }
+
     throw error;
   }
 

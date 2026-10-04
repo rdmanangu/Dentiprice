@@ -236,6 +236,48 @@ export async function deleteInquiry(
 }
 
 // ─────────────────────────────────────────────
+// GET PENDING INQUIRIES AVAILABLE FOR SCHEDULING
+// Appointments are created exclusively through the
+// confirm_inquiry_and_schedule RPC, which requires a
+// pending inquiry with a resolved patient. The scheduling
+// form therefore lists only inquiries that can actually
+// be scheduled.
+//
+// Item snapshots are embedded so the form can show what
+// will be copied onto the appointment.
+// ─────────────────────────────────────────────
+
+export type SchedulableInquiry = Inquiry & {
+  inquiry_items: InquiryItem[];
+};
+
+export async function getSchedulableInquiries(): Promise<
+  SchedulableInquiry[]
+> {
+  const { data, error } = await supabase
+    .from("inquiries")
+    .select(
+      `
+      *,
+      inquiry_items(id, inquiry_id, procedure_id, add_on_id, item_name, item_price)
+    `
+    )
+    .eq("status", "pending")
+    .order("preferred_date", { ascending: true })
+    .order("created_at", { ascending: true });
+
+  if (error) {
+    console.error(
+      "Get schedulable inquiries error:",
+      error
+    );
+    throw error;
+  }
+
+  return (data ?? []) as SchedulableInquiry[];
+}
+
+// ─────────────────────────────────────────────
 // CONFIRM INQUIRY & SCHEDULE APPOINTMENT
 // Atomic server-side operation: locks the
 // inquiry, creates the appointment + items,
@@ -249,6 +291,20 @@ export async function confirmInquiryAndSchedule(
   appointmentEnd: string,
   notes?: string
 ): Promise<ConfirmScheduleResult> {
+  if (!appointmentDate || !appointmentStart || !appointmentEnd) {
+    throw new Error(
+      "Please choose a date, a start time, and an end time."
+    );
+  }
+
+  // Frontend guard for immediate feedback. The RPC performs the
+  // same validation authoritatively inside the transaction.
+  if (appointmentEnd <= appointmentStart) {
+    throw new Error("End time must be after the start time.");
+  }
+
+  const trimmedNotes = notes?.trim();
+
   const { data, error } = await supabase.rpc(
     "confirm_inquiry_and_schedule",
     {
@@ -256,7 +312,7 @@ export async function confirmInquiryAndSchedule(
       p_appointment_date: appointmentDate,
       p_appointment_start: appointmentStart,
       p_appointment_end: appointmentEnd,
-      ...(notes ? { p_notes: notes } : {}),
+      p_notes: trimmedNotes ? trimmedNotes : null,
     }
   );
 
@@ -266,8 +322,76 @@ export async function confirmInquiryAndSchedule(
       error
     );
 
-    throw error;
+    throw translateScheduleError(error);
   }
 
   return data as ConfirmScheduleResult;
+}
+
+// Converts a database rejection into guidance an admin can act
+// on, without exposing raw SQL text.
+function translateScheduleError(
+  error: { message?: string; code?: string }
+): Error {
+  const raw = (error.message ?? "").toLowerCase();
+
+  if (
+    error.code === "42501" ||
+    raw.includes("authorization denied") ||
+    raw.includes("row-level security")
+  ) {
+    return new Error(
+      "Permission denied. Your account cannot schedule appointments."
+    );
+  }
+
+  if (raw.includes("in the past")) {
+    return new Error(
+      "Appointments cannot be scheduled in the past. Please choose today or a future date."
+    );
+  }
+
+  if (raw.includes("end time")) {
+    return new Error(
+      "End time must be after the start time. Please check your selection."
+    );
+  }
+
+  if (raw.includes("cannot be confirmed")) {
+    return new Error(
+      "This inquiry is no longer pending, so it can no longer be scheduled."
+    );
+  }
+
+  if (
+    raw.includes("no linked patient") ||
+    raw.includes("patient resolution")
+  ) {
+    return new Error(
+      "This inquiry is not linked to a patient record yet, so it cannot be scheduled."
+    );
+  }
+
+  if (raw.includes("patient record not found")) {
+    return new Error(
+      "The patient linked to this inquiry no longer exists."
+    );
+  }
+
+  // Duplicate key: the one-appointment-per-inquiry index rejected it.
+  if (error.code === "23505") {
+    return new Error(
+      "This inquiry already has an appointment. Refresh to see the latest schedule."
+    );
+  }
+
+  if (raw.includes("appointment_end_time") || raw.includes("check")) {
+    return new Error(
+      "The selected time is not valid. End time must be after the start time."
+    );
+  }
+
+  return new Error(
+    "The appointment could not be scheduled. Please try again."
+  );
 }

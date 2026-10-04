@@ -592,7 +592,7 @@ function InquiryDetails({
         </section>
 
         {/* TOTAL */}
-        <section className="rounded-card bg-gradient-to-br from-primary to-primary-hover p-5 text-white">
+        <section className="rounded-card bg-linear-to-br from-primary to-primary-hover p-5 text-white">
           <div className="flex items-center justify-between gap-4">
             <span className="text-sm text-white/70">
               Calculated total
