@@ -1,6 +1,6 @@
 # Project Documents
 
-Everything your project is marked on that is not code should be kept here, in the repository, so it is versioned alongside the software it describes.
+Keep project documentation and other non-code materials here so they are versioned alongside the software they describe.
 
 | File | What it is | When |
 |---|---|---|
@@ -9,12 +9,10 @@ Everything your project is marked on that is not code should be kept here, in th
 | `03-design-system.md` | Colours, type, components | Finals, M8A3 |
 | `04-weekly-reports.md` | A few lines a week | Every week |
 | `05-demo-video.md` | The recording, and its plan | The end |
-| `06-security-and-privacy.md` | What you checked before making this public | Before your first push |
+| `06-security-and-privacy.md` | Repository security and privacy checks, plus items to verify | Before public submission and deployment |
 
 ---
 
 ### Assets Guidance
 
-Put images in `assets/`. A screenshot named `assets/screenshot.png` is referenced by the main `README.md`. A README with an image reads as finished in a way one without an image does not.
-
-> **Tip:** Write these as you go. A weekly report written on the last day is obvious to read and worth very little.
+The mockup images currently live in `../src/assets/`. Link to them with paths relative to the Markdown file. Before publishing, check screenshots for patient details and account contact information; replace or redact any real information.

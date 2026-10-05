@@ -107,8 +107,8 @@ You will also need access to the project's Supabase database and authentication 
 ### 1. Clone the repository
 
 ```bash
-git clone 
-cd YOUR-REPO https://github.com/rdmanangu/Dentiprice.git
+git clone https://github.com/rdmanangu/Dentiprice.git
+cd Dentiprice
 ```
 
 ### 2. Install dependencies
@@ -132,9 +132,14 @@ Do not place real credentials in this README or commit private credentials to Gi
 
 ### 4. Set up Supabase
 
-Create a Supabase project and open the Supabase SQL Editor.
-
-Apply the database migrations included in the repository in the correct order.
+Create a Supabase project and open the Supabase SQL Editor. The six SQL files in
+`supabase/migrations/` are incremental migrations for the patient and appointment
+workflows; they are not a complete fresh-database bootstrap. They assume the
+base `procedures`, `add_ons`, `inquiries`, and `inquiry_items` tables already
+exist. The repository does not include the SQL that creates that base schema.
+Set up the base schema first, then apply the tracked migrations in filename
+order. Do not treat this repository alone as sufficient to initialize a new,
+empty Supabase database.
 
 The application uses PostgreSQL tables including:
 
@@ -226,9 +231,17 @@ patients
    +---- appointments
              |
              +---- appointment_items
+
+inquiries
+   +---- inquiry_items
+   +---- zero or one appointment
 ```
 
-Treatment information is stored as snapshots on inquiry and appointment items so that historical records can retain the treatment name and price associated with the original transaction.
+Each appointment belongs to a patient and may be linked to its originating
+inquiry. The database has a unique partial index allowing at most one linked
+appointment per inquiry. Inquiry and appointment items store treatment/add-on
+name and price snapshots so later catalog changes do not rewrite those item
+details.
 
 ### Patients
 
@@ -498,7 +511,7 @@ npm run lint
 
 - **Video:** https://drive.google.com/file/d/19UyjqHshRitB5XWvFzxs3tRU2H3nTayW/view?usp=drive_link
 - **Slides:** https://docs.google.com/presentation/d/18vAWir6xbZcT3tFdDblDrMCyUFzhCLWE/edit?usp=drive_link&ouid=109011297119006716577&rtpof=true&sd=true
-- **Square image:** Add the project square image to the project folder or provide a public link.
+- **Square image:** https://drive.google.com/file/d/1lMf6p7oQXyys2ctk7X0GnGKdbV9_7Gwc/view?usp=drive_link
 
 ---
 

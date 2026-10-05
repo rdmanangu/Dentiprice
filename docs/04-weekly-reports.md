@@ -160,6 +160,41 @@ The project was moving from active feature development toward final testing and 
 * Add final screenshots and documentation.
 * Complete final deployment/production verification.
 
+## Week of: October 4, 2026
+
+### What changed this week
+
+* Improved the scheduling interface and appointment-management workflow, including appointment details, calendar and list views, and scheduling actions. 
+* Fixed scheduling dashboard prop types so the component contract matches its callers. 
+* Updated admin login and branding. 
+* Fixed the logo image path. 
+* Updated the AI usage documentation.
+
+### Why
+
+This work focused on polishing the admin experience and aligning the scheduling dashboard's types with its current use.
+
+### What broke or what I got stuck on
+
+* The scheduling dashboard prop types did not match the values passed by the page; the mismatch was corrected.
+
+### What is left
+
+* Verify the live deployment and database workflows before the final presentation.
+* Replace or anonymize admin screenshots if any displayed records or account details are real.
+* Confirm the complete database setup instructions for a fresh Supabase project.
+
+## Documentation updates through October 5, 2026
+
+The project documentation was reviewed against the current source and recent Git history. The current repository history includes later changes to the admin UI and schedule, but it does not by itself establish whether a deployment, security audit, or end-to-end test was performed.
+
+### Recent milestones
+
+* **Sep 23:** Patient and dashboard UI updates
+* **Sep 25:** Live app URL updated in the README 
+* **Sep 27:** Final project documentation and security checklist added 
+* **Oct 4:** Admin login/branding, logo path, and scheduling improvements 
+
 ---
 
 # Timeline & Milestones Summary
@@ -173,7 +208,9 @@ The project was moving from active feature development toward final testing and 
 | **Aug 31** | Patients, appointments, scheduling, inquiry fix |
 | **Sep 7** | Testing and workflow integration |
 | **Sep 14** | Patients/admin dashboard UI |
-| **Sep 21–23** | Final testing and production readiness |
+| **Sep 18** | Production-readiness hardening |
+| **Sep 21–27** | Patient/dashboard UI, live app URL, final project documentation |
+| **Oct 4** | Admin login/branding and scheduling refinements |
 
 ## Actual GitHub Milestones History
 
@@ -186,3 +223,5 @@ The project was moving from active feature development toward final testing and 
 * **Sep 6:** Inquiry submission conflict fix
 * **Sep 15:** Patients/admin dashboard UI
 * **Sep 18:** Production-readiness hardening
+
+---

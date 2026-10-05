@@ -12,7 +12,7 @@ I used AI during the early development of DentiPrice to help think through the p
 
 **What I did:** I used AI as a starting point for planning and implementation ideas, then I tested the results in the actual application and adjusted them as needed.
 
-**Commit:** [Initial DentiPrice project](https://github.com/rdmanangu/Dentiprice/commit/eac3a48)
+**Commit:** [Initial DentiPrice project](https://github.com/rdmanangu/Dentiprice/commit/ea3c448)
 
 ---
 
@@ -62,7 +62,7 @@ I used AI to help develop the appointment, scheduling, and patient workflow feat
 
 **What I did:** I tested the workflow and checked that the different admin features worked together. AI helped me reason through issues and possible fixes as I built and refined the system.
 
-**Commit:** [Update appointments, scheduling, and add patient workflow features](https://github.com/rdmanangu/Dentiprice/commit/956f109)
+**Commit:** [Update appointments, scheduling, and add patient workflow features](https://github.com/rdmanangu/Dentiprice/commit/956f0f9)
 
 ---
 
@@ -73,6 +73,21 @@ I used AI to help improve the patients page and admin dashboard interface, parti
 **What I did:** I reviewed the interface changes and tested the admin dashboard and patient-related features. Some of this work involved frontend improvements, while the underlying data logic was still part of my broader backend contribution.
 
 **Commit:** [Update patients and admin dashboard UI](https://github.com/rdmanangu/Dentiprice/commit/8963834)
+
+---
+
+### 8. Recent Admin and Scheduling Refinements
+
+The later repository history includes more admin and scheduling work:
+
+- Patient and dashboard UI updates ([commit](https://github.com/rdmanangu/Dentiprice/commit/8dfe186)).
+- Scheduling and appointment-management UI changes ([commit](https://github.com/rdmanangu/Dentiprice/commit/cfbd038)).
+- Admin login and branding updates ([commit](https://github.com/rdmanangu/Dentiprice/commit/0bf56bd)).
+- A logo image-path fix ([commit](https://github.com/rdmanangu/Dentiprice/commit/628a7b1)).
+- Scheduling dashboard prop-type fixes ([commit](https://github.com/rdmanangu/Dentiprice/commit/fe3210d)).
+- Production-readiness changes across admin components, services, and database migrations ([commit](https://github.com/rdmanangu/Dentiprice/commit/48347ff)).
+
+My contribution in this period was smaller on the frontend than on the backend. These commit links document repository changes; Git history alone cannot show how much of each change was AI-generated or establish that every line was written by me.
 
 ## Where the AI Got It Wrong
 
@@ -115,11 +130,11 @@ I used the information from the error to investigate the underlying issue instea
 
 ## Who Wrote What
 
-AI was an important development assistant for DentiPrice, but I remained responsible for deciding what code to use, testing the application, and correcting problems. My main contribution was backend development, while I also contributed a smaller amount to the frontend.
+AI was an important development assistant for DentiPrice. My primary contribution was backend development, with a smaller contribution to the frontend. I remained responsible for deciding what code to use, checking suggestions, and correcting problems. This describes my own account of the work; the repository does not independently verify how much of the code was AI-assisted.
 
-### My main contribution: backend work
+### My primary contribution: backend work
 
-I personally worked on and/or validated major parts of the backend, including:
+My main area of contribution was backend development, including work on:
 
 - Supabase integration and database setup.
 - PostgreSQL/Supabase queries and data retrieval logic.
@@ -130,11 +145,11 @@ I personally worked on and/or validated major parts of the backend, including:
 - Problem solving around Supabase relationship issues and runtime errors.
 - Production-readiness work such as code cleanup, validation, and security-focused improvements.
 
-This included work reflected in the project history, such as the backend and admin workflow updates that supported appointment, patient, and inquiry management.
+The repository history includes changes to patient and appointment foundations, inquiry handling, scheduling, and production-readiness work ([patient and appointment foundation](https://github.com/rdmanangu/Dentiprice/commit/9bcd18e), [appointment and patient workflows](https://github.com/rdmanangu/Dentiprice/commit/956f0f9), [inquiry conflict fix](https://github.com/rdmanangu/Dentiprice/commit/be9836b), [production-readiness hardening](https://github.com/rdmanangu/Dentiprice/commit/48347ff)). These links show the changes in the repository, not who authored each line or the level of AI assistance.
 
 ### My smaller contribution: frontend work
 
-I also contributed to the frontend in the React + TypeScript + Vite app, including:
+I also made a smaller contribution to the frontend in the React + TypeScript + Vite app, including:
 
 - Admin dashboard and patient UI updates.
 - Scheduling UI improvements and appointment-management refinements.
@@ -143,7 +158,7 @@ I also contributed to the frontend in the React + TypeScript + Vite app, includi
 - Fixes for logo image paths and TypeScript prop-type issues.
 - Connecting frontend pages to backend services and refining user-facing behavior.
 
-These are supported by the repository history, including the scheduling dashboard prop-type fix, admin login and branding updates, and related UI improvements.
+The repository includes related UI changes ([patient and dashboard UI](https://github.com/rdmanangu/Dentiprice/commit/8dfe186), [scheduling UI](https://github.com/rdmanangu/Dentiprice/commit/cfbd038), [admin login and branding](https://github.com/rdmanangu/Dentiprice/commit/0bf56bd), [logo path](https://github.com/rdmanangu/Dentiprice/commit/628a7b1), and [scheduling prop types](https://github.com/rdmanangu/Dentiprice/commit/fe3210d)).
 
 ### Documentation contribution
 

@@ -20,15 +20,19 @@ Dentiprice helps dental patients estimate the cost of dental treatments and subm
 
 ## Sections and Routes
 
+The route names below describe the current implementation as of October 5, 2026. The public estimator and inquiry form are sections on the home page, not separate routes.
+
 | # | Section / Route | What It Is For |
 |---|---|---|
-| **1** | **Home** | Introduces Dentiprice and helps patients quickly find and navigate to the treatment price estimator. |
-| **2** | **Treatments / Price Estimator** | Lets patients browse treatments, select add-ons, and calculate an estimated total treatment price in real time. |
-| **3** | **Appointment Inquiry** | Collects the patient's contact information and preferred date/time to submit an appointment inquiry. |
-| **4** | **Admin Dashboard** | Gives clinic staff central access to patient management, inquiries, scheduling, patient history, and clinic settings. |
-| **5** | **Treatments & Add-ons (Admin)** | Allows clinic staff to create, edit, disable, and manage the treatments and add-ons displayed to patients. |
+| **1** | **Home (`/`)** | Introduces DentiPrice and includes the public procedure catalog, price estimator, and consultation inquiry form. |
+| **2** | **Admin Login (`/admin/login`)** | Lets an administrator sign in through Supabase Authentication. |
+| **3** | **Admin Dashboard (`/admin`)** | Shows clinic activity and links to the administration modules. |
+| **4** | **Inquiries (`/admin/inquiries`)** | Lets administrators review and manage consultation inquiries. |
+| **5** | **Patients (`/admin/patients`, `/admin/patients/:id`)** | Lets administrators manage patient records and view an individual patient's history. |
+| **6** | **Scheduling (`/admin/scheduling`)** | Lets administrators review, schedule, and manage appointments using overview, calendar, and list views. |
+| **7** | **Treatments (`/admin/treatments`)** | Lets administrators create and manage procedures and their add-ons. |
 
-> **Note:** The Admin Dashboard contains several related management modules (Patients, Inquiries, Scheduling, Patient History, Clinic Info), grouped together under the admin area to streamline clinic staff workflows.
+There is no separate public estimator or inquiry route, and the current admin routes do not include a clinic-settings page.
 
 ---
 
@@ -59,7 +63,7 @@ The **Price Estimator** is the core feature of the application. Its state determ
 * **Block 6:** Total Estimated Price Display
 * **Block 7:** "Continue to Appointment Inquiry" Action Button
 
-> *These blocks will be modularized into reusable React components such as treatment cards, add-on chips/cards, price summaries, and inquiry form fields.*
+> *These blocks are implemented with reusable React components, including `ProcedureCard`, `PriceEstimator`, `InquiryForm`, and shared UI components.*
 
 ---
 

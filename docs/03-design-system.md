@@ -4,11 +4,7 @@ The **DentiPrice Design System** defines the visual rules and reusable interface
 
 ## Visual Design Reference
 
-The complete visual design system is represented in the exported design-system image stored in the project assets folder.
-
-![DentiPrice Design System](assets/design-system.png)
-
-The visual reference includes the color palette, typography, spacing scale, reusable components, and component states.
+The implemented design tokens are defined in `src/index.css` and used through Tailwind CSS v4 utilities. A separate exported design-system image is not included in the repository.
 
 ---
 
@@ -18,46 +14,42 @@ DentiPrice uses a small, consistent color palette rather than different colors f
 
 | Token | Role | Hex |
 |---|---|---|
-| `--color-primary` | Main buttons, links, active navigation | `#2563EB` |
-| `--color-accent` | Highlights and important actions | `#14B8A6` |
+| `--color-primary` | Brand color and primary buttons | `#5C1428` |
+| `--color-primary-hover` | Hover and active states | `#8A1E3C` |
+| `--color-accent` | Selected states and focus rings | `#B82850` |
+| `--color-cta` | Patient-facing calls to action | `#D64070` |
+| `--color-ink` | Main text | `#2E0A14` |
 | `--color-bg` | Main page background | `#F8FAFC` |
-| `--color-surface` | Cards, panels, forms and tables | `#FFFFFF` |
-| `--color-text` | Main body and heading text | `#1E293B` |
+| `--color-surface` | Cards, panels and modals | `#FFFFFF` |
+| `--color-border` | Card, form and table borders | `#E2E8F0` |
+| `--color-sidebar` | Admin navigation background | `#4A0F1F` |
 
 ### Semantic colors
 
 | Token | Role | Hex |
 |---|---|---|
-| `--color-success` | Successful actions and active states | `#16A34A` |
-| `--color-warning` | Warnings and pending states | `#D97706` |
-| `--color-error` | Errors and destructive actions | `#DC2626` |
-| `--color-muted` | Secondary text and inactive information | `#64748B` |
+| `--color-success` | Successful and completed states | `#15803D` |
+| `--color-warning` | Warnings and pending states | `#B45309` |
+| `--color-error` | Errors and destructive actions | `#B91C1C` |
+| `--color-info` | Informational states | `#0369A1` |
 
-Text and background combinations are checked for readable contrast. Normal text should meet the WCAG minimum contrast ratio of **4.5:1**.
+The stylesheet labels the semantic status colors “WCAG AA”; this repository does not include a separate contrast-audit report, so that label is not evidence that every text/background combination has been measured.
 
 ---
 
 ## Typography
 
-DentiPrice uses a simple type scale so that headings, body text, and supporting information remain consistent.
-
-| Token | Size | Weight | Used for |
-|---|---:|---|---|
-| `--font-size-xl` | `32px` | 700 | Main page headings |
-| `--font-size-lg` | `24px` | 700 | Section headings and dashboard titles |
-| `--font-size-md` | `16px` | 400–500 | Body text, forms and table content |
-| `--font-size-sm` | `14px` | 400–500 | Labels, captions and secondary information |
-
-### Font family
-
-The application uses a clean sans-serif font stack:
+DentiPrice's stylesheet sets this preferred font stack:
 
 ```css
-font-family:
-  Inter,
-  ui-sans-serif,
-  system-ui,
-  -apple-system,
-  BlinkMacSystemFont,
-  "Segoe UI",
-  sans-serif;
+--font-sans: Inter, system-ui, -apple-system, BlinkMacSystemFont,
+  "Segoe UI", sans-serif;
+```
+
+Inter is preferred when available; system sans-serif fonts are fallbacks. The project does not define custom font-size tokens; text sizing uses Tailwind utility classes.
+
+## Shape, spacing and focus
+
+The stylesheet defines a `12px` card radius, an `8px` control radius, a pill radius, and a subtle card shadow. Layout spacing and most component styles use Tailwind utility classes.
+
+Interactive elements receive a visible default focus outline through `:focus-visible` (2px solid accent with a 2px offset). This is one accessibility-related implementation detail, not a complete accessibility audit.

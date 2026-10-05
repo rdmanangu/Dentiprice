@@ -12,28 +12,25 @@ The mockups cover the main patient and admin screens included in the revised pro
 
 | Screen | Mockup |
 |---|---|
-| Home | [View Home Mockup](assets/home.png) |
-| Price Estimator | [View Price Estimator Mockup](assets/price_estimator.png) |
-| Inquiry Form | [View Inquiry Form Mockup](assets/inquiry_form.png) |
+| Home | [View Home Mockup](../src/assets/home.png) |
+| Price Estimator | [View Price Estimator Mockup](../src/assets/price_estimator.png) |
+| Inquiry Form | [View Inquiry Form Mockup](../src/assets/inquiry_form.png) |
 
 ### Admin Side
 
 | Screen | Mockup |
 |---|---|
-| Admin Dashboard | [View Dashboard Mockup](assets/admin_dashboard.png) |
-| Inquiries | [View Inquiries Mockup](assets/inquiries.png) |
-| Patients | [View Patients Mockup](assets/patients.png) |
-| Appointments | [View Appointments Mockup](assets/appointments.png) |
-| Schedule | [View Schedule Mockup](assets/appointments.png) |
-| Treatments & Add-ons | [View Treatments & Add-ons Mockup](assets/treatments-addons.png) |
+| Admin Dashboard | Pending privacy review |
+| Inquiries | Pending privacy review |
+| Patients | Pending privacy review |
+| Appointments / Schedule | Pending privacy review |
+| Treatments & Add-ons | Pending privacy review |
+
+The current admin screenshots in `src/assets/` include realistic patient records and account contact details. They are not linked here until those details are confirmed to be fictional or replaced with anonymized screenshots.
 
 ## Empty State
 
-At least one empty state is included in the mockups to show how the application behaves when there is no data to display.
-
-For example, the admin inquiry page can display an empty state when there are no patient inquiries:
-
-The empty state provides a clear message instead of leaving the page blank.
+The application has empty-state components for pages with no records. An empty-state mockup image is not currently included in this document.
 
 ## Responsive Mockups
 
@@ -47,7 +44,7 @@ The desktop layouts use the full available screen width and provide space for th
 
 The phone layouts reorganize the content into a smaller vertical layout. Tables and multi-column sections can stack or become horizontally scrollable where necessary, while navigation is adapted for the smaller screen.
 
-![DentiPrice Mobile Mockup](assets/mobile-mockup.png)
+The mobile mockup image is also pending the privacy review described above.
 
 ## Design Decisions
 
@@ -86,4 +83,4 @@ If a feature shown in these mockups is not included in the final built applicati
 
 ## Assets
 
-All exported mockup images are stored in the `assets/` folder so the visual documentation remains available in the project repository.
+The available exported mockup images are stored in `src/assets/`.
