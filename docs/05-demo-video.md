@@ -166,23 +166,6 @@ Before recording:
 * [✓] Record with your **own voice**.
 * [✓] Keep the video between **3 and 5 minutes**.
 
-# If Something Breaks
-
-Have a backup ready:
-
-1. Working deployed application
-2. Demo-mode/client fallback if available
-3. Recording of the working application
-4. Screenshots
-
-If the live demo fails, don't spend the whole video troubleshooting. Briefly explain what happened and use your prepared fallback.
-
-# Most Important Rule
-
-**Do not try to prove that you built everything. Prove that you understand the parts you worked on.**
-
-For the technical section, choose one backend/workflow or scheduling feature that you can confidently explain line by line.
-
 ## Final Presentation
 
 - **Video:** https://drive.google.com/file/d/19UyjqHshRitB5XWvFzxs3tRU2H3nTayW/view?usp=drive_link

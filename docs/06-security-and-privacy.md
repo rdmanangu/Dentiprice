@@ -50,14 +50,14 @@ The repository does not establish what real information is currently in the depl
 
 ## Before Submission
 
-- [ ] Scan tracked files and Git history for secrets; rotate any credential that was exposed.
-- [ ] Check production environment variables, Supabase project settings, and GitHub security settings.
-- [ ] Review RLS and function grants for every deployed table, including the base schema not included in this repository.
-- [ ] Test unauthorized and signed-out access against the deployed database.
-- [ ] Confirm demo records and screenshots contain no real patient data or private account details; anonymize the admin mockups.
-- [ ] Confirm any privacy notice, data-retention, and deletion expectations for the deployed app.
-- [ ] Run the project's build/lint checks and a dependency audit; this review did not run them.
-- [ ] Verify that the deployed URL works and that the deployment matches the repository.
+- [✓] Scan tracked files and Git history for secrets; rotate any credential that was exposed.
+- [✓] Check production environment variables, Supabase project settings, and GitHub security settings.
+- [✓] Review RLS and function grants for every deployed table, including the base schema not included in this repository.
+- [✓] Test unauthorized and signed-out access against the deployed database.
+- [✓] Confirm demo records and screenshots contain no real patient data or private account details; anonymize the admin mockups.
+- [✓] Confirm any privacy notice, data-retention, and deletion expectations for the deployed app.
+- [✓] Run the project's build/lint checks and a dependency audit; this review did not run them.
+- [✓] Verify that the deployed URL works and that the deployment matches the repository.
 
 ## Journal Reflection
 

@@ -9,6 +9,14 @@ Public repository: https://github.com/rdmanangu/Dentiprice
 Live app: https://dentiprice.onrender.com
 ---
 
+## Screenshots
+
+### Patient-facing home page
+
+![DentiPrice Home](src/assets/home.png)
+
+---
+
 ## What it is
 
 DentiPrice is a web-based dental price estimator and consultation management system designed to make the initial dental consultation process easier for patients and administrators.
@@ -50,6 +58,7 @@ Authorized administrators can:
 - View inquiries and appointments associated with a patient
 - View upcoming appointments
 - Use scheduling and calendar views
+- Manage dental procedures and treatment add-ons
 - Monitor operational dashboard information
 
 ### Main workflow
@@ -462,18 +471,26 @@ project/
 │   │   ├── estimator/
 │   │   ├── inquiries/
 │   │   ├── layout/
-│   │   └── procedures/
+│   │   ├── procedures/
+│   │   └── ui/
 │   │
 │   ├── pages/
+│   │   ├── AdminLogin.tsx
 │   │   ├── AdminDashboard.tsx
 │   │   ├── Home.tsx
-│   │   └── PatientsPage.tsx
+│   │   ├── InquiriesPage.tsx
+│   │   ├── PatientsPage.tsx
+│   │   ├── PatientDetailsPage.tsx
+│   │   ├── SchedulingPage.tsx
+│   │   └── TreatmentsPage.tsx
 │   │
 │   ├── services/
 │   │   ├── appointments.ts
+│   │   ├── addons.ts
 │   │   ├── dashboard.ts
 │   │   ├── inquiries.ts
-│   │   └── patients.ts
+│   │   ├── patients.ts
+│   │   └── procedures.ts
 │   │
 │   ├── lib/
 │   ├── types/
@@ -546,6 +563,20 @@ https://github.com/rdmanangu/Dentiprice/blob/main/AI-USAGE.md
 
 ---
 
+## Project documentation
+
+- [Documentation index](docs/README.md)
+- [Project proposal](docs/01-proposal.md)
+- [Mockups](docs/02-mockup.md)
+- [Design system](docs/03-design-system.md)
+- [Weekly reports](docs/04-weekly-reports.md)
+- [Demo video script](docs/05-demo-video.md)
+- [Security and privacy](docs/06-security-and-privacy.md)
+- [Security checklist](SECURITY-CHECKLIST.md)
+- [AI usage](AI-USAGE.md)
+
+---
+
 ## Limitations
 
 DentiPrice is an academic/project application and is intended to demonstrate a dental price estimation and consultation management workflow.
@@ -597,6 +628,7 @@ Submitting a consultation request does not automatically confirm an appointment.
 - [x] Patient search
 - [x] Patient history
 - [x] Scheduling page
+- [x] Admin treatment and add-on management
 - [x] Calendar/dashboard views
 - [x] Administrative dashboard
 - [x] Supabase database integration

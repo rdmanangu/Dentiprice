@@ -12,9 +12,9 @@ The mockups cover the main patient and admin screens included in the revised pro
 
 | Screen | Mockup |
 |---|---|
-| Home | [View Home Mockup](../src/assets/home.png) |
-| Price Estimator | [View Price Estimator Mockup](../src/assets/price_estimator.png) |
-| Inquiry Form | [View Inquiry Form Mockup](../src/assets/inquiry_form.png) |
+| Home | ![Patient home screen mockup](../src/assets/home.png) |
+| Price Estimator | ![Patient price estimator mockup](../src/assets/price_estimator.png) |
+| Inquiry Form | ![Patient inquiry form mockup](../src/assets/inquiry_form.png) |
 
 ### Admin Side
 
@@ -40,11 +40,13 @@ The mockups also show how the application changes on smaller screens.
 
 The desktop layouts use the full available screen width and provide space for the admin navigation, tables, cards, forms, and other content.
 
+![Desktop home screen mockup](../src/assets/home.png)
+
 ### Phone
 
 The phone layouts reorganize the content into a smaller vertical layout. Tables and multi-column sections can stack or become horizontally scrollable where necessary, while navigation is adapted for the smaller screen.
 
-The mobile mockup image is also pending the privacy review described above.
+![Mobile phone mockup of the patient home screen](../src/assets/mobile-mockup.png)
 
 ## Design Decisions
 
