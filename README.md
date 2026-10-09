@@ -657,9 +657,12 @@ Possible future improvements include:
 These features are outside the core scope of the current project.
 
 ---
+## Author
+
+Redenelle Maurice Manangu
 
 ## License
 
 This project was created as an academic/project submission.
+This project is licensed under the [MIT License](LICENSE).
 
-Unless a separate license is added to the repository, the project should be treated as an academic project and not as software licensed for unrestricted commercial redistribution.
